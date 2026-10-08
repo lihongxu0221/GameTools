@@ -366,5 +366,7 @@ FodyWeavers.xsd
 .atomcode
 
 Screenshots/
+logs/
+NLog.config.bak
 Outputs/
 

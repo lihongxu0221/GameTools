@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Drawing;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
 using GameTools.Core.Models;
 using GameTools.Win32.Native;
@@ -8,23 +6,28 @@ using GameTools.Win32.Native;
 namespace GameTools.Win32.Helpers;
 
 /// <summary>
-/// 窗口探测与枚举辅助类，包含 Win7 到 Win11 的坐标计算自适应降级
+/// 窗口探测与枚举辅助类，包含 Windows 7 至 Windows 11 的坐标计算自适应降级。
 /// </summary>
 public static class WindowHelper
 {
     /// <summary>
-    /// 获取窗口的精准外接矩形
-    /// Windows 8/10/11: 优先使用 DwmGetWindowAttribute 去除 Aero 隐形阴影
-    /// Windows 7 / DWM 未启用时: 降级使用 GetWindowRect
+    /// 获取窗口的可见边界矩形。
+    /// Windows 8.1 及以上优先使用 DWM 扩展帧边界以去除不可见的调整边框，
+    /// Windows 7 与 8 或 DWM 不可用时降级使用 <c>GetWindowRect</c>。
     /// </summary>
-    public static Rectangle GetWindowBounds(IntPtr hWnd)
+    /// <remarks>
+    /// 两种来源语义并不一致：DWM 扩展边界排除了不可见调整边框，而 <c>GetWindowRect</c> 在
+    /// DPI 虚拟化下返回被缩放的坐标。若需要与 <c>PrintWindow</c> 绘制区域严格对齐，
+    /// 应使用 <see cref="GetPrintWindowSize"/>。
+    /// </remarks>
+    /// <param name="hWnd">目标窗口句柄。</param>
+    public static CaptureBounds GetWindowBounds(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero)
         {
-            return Rectangle.Empty;
+            return CaptureBounds.Empty;
         }
 
-        // 仅在 Win8+ 且 DWM 启用时尝试 DWMWA_EXTENDED_FRAME_BOUNDS
         if (OSVersionHelper.IsWindows81OrGreater)
         {
             try
@@ -37,26 +40,57 @@ public static class WindowHelper
 
                 if (hr == 0 && dwmRect.Width > 0 && dwmRect.Height > 0)
                 {
-                    return dwmRect.ToRectangle();
+                    return dwmRect.ToCaptureBounds();
                 }
             }
-            catch
+            catch (DllNotFoundException)
             {
-                // dwmapi 加载或调用异常时降级
+                // dwmapi 不可用时降级
+            }
+            catch (EntryPointNotFoundException)
+            {
+                // 符号缺失时降级
             }
         }
 
         if (User32.GetWindowRect(hWnd, out RECT rect))
         {
-            return rect.ToRectangle();
+            return rect.ToCaptureBounds();
         }
 
-        return Rectangle.Empty;
+        return CaptureBounds.Empty;
     }
 
     /// <summary>
-    /// 获取指定窗口的详细模型信息
+    /// 获取与 <c>PrintWindow</c> 绘制区域严格一致的位图尺寸。
     /// </summary>
+    /// <remarks>
+    /// <c>PrintWindow</c> 始终按窗口完整外框（包含不可见调整边框）绘制，而
+    /// <see cref="GetWindowBounds"/> 在 DWM 可用时会排除该边框。若直接把 DWM 边界当作位图尺寸，
+    /// 会出现右侧与底部被裁切的结果，因此位图分配一律以本方法返回的尺寸为准。
+    /// </remarks>
+    /// <param name="hWnd">目标窗口句柄。</param>
+    /// <returns>位图宽高；窗口无效时返回 0,0。</returns>
+    public static (int Width, int Height) GetPrintWindowSize(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero)
+        {
+            return (0, 0);
+        }
+
+        if (User32.GetWindowRect(hWnd, out RECT rect) && rect.Width > 0 && rect.Height > 0)
+        {
+            return (rect.Width, rect.Height);
+        }
+
+        CaptureBounds bounds = GetWindowBounds(hWnd);
+        return (bounds.Width, bounds.Height);
+    }
+
+    /// <summary>
+    /// 获取指定窗口的详细信息。
+    /// </summary>
+    /// <param name="hWnd">目标窗口句柄。</param>
     public static WindowInfo? GetWindowInfo(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero)
@@ -73,36 +107,21 @@ public static class WindowHelper
         string className = sbClass.ToString();
 
         User32.GetWindowThreadProcessId(hWnd, out uint pid);
-        string procName = string.Empty;
-        try
-        {
-            using var proc = Process.GetProcessById((int)pid);
-            procName = proc.ProcessName;
-        }
-        catch
-        {
-            procName = "Unknown";
-        }
+        string procName = ProcessInfoCache.TryGetProcessName((int)pid);
 
-        var bounds = GetWindowBounds(hWnd);
-        bool isVisible = User32.IsWindowVisible(hWnd);
-        bool isMinimized = User32.IsIconic(hWnd);
-
-        return new WindowInfo
-        {
-            Handle = hWnd,
-            Title = title,
-            ClassName = className,
-            Bounds = bounds,
-            ProcessId = (int)pid,
-            ProcessName = procName,
-            IsVisible = isVisible,
-            IsMinimized = isMinimized
-        };
+        return new WindowInfo(
+            hWnd,
+            title,
+            className,
+            GetWindowBounds(hWnd),
+            (int)pid,
+            procName,
+            User32.IsWindowVisible(hWnd),
+            User32.IsIconic(hWnd));
     }
 
     /// <summary>
-    /// 枚举所有顶级可见窗口
+    /// 枚举所有可见且有标题的顶级窗口。
     /// </summary>
     public static IReadOnlyList<WindowInfo> FindTopLevelWindows()
     {
@@ -125,10 +144,16 @@ public static class WindowHelper
     }
 
     /// <summary>
-    /// 根据标题关键字查找窗口
+    /// 根据标题关键字查找窗口。
     /// </summary>
+    /// <param name="titleKeyword">标题关键字，忽略大小写。</param>
     public static IReadOnlyList<WindowInfo> FindWindowsByTitle(string titleKeyword)
     {
+        if (string.IsNullOrEmpty(titleKeyword))
+        {
+            return Array.Empty<WindowInfo>();
+        }
+
         return FindTopLevelWindows()
             .Where(w => w.Title.IndexOf(titleKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
             .ToList();

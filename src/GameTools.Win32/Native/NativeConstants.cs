@@ -1,4 +1,4 @@
-﻿namespace GameTools.Win32.Native;
+namespace GameTools.Win32.Native;
 
 public static class NativeConstants
 {
@@ -15,7 +15,6 @@ public static class NativeConstants
     public const uint WM_SYSKEYUP = 0x0105;
     public const uint WM_HOTKEY = 0x0312;
     public const uint WM_USER = 0x0400;
-    public const uint WM_EXECUTE_ACTION = WM_USER + 101;
 
     // Mouse Messages
     public const uint WM_MOUSEMOVE = 0x0200;
@@ -81,6 +80,12 @@ public static class NativeConstants
     public const uint EVENT_OBJECT_DESTROY = 0x8001;
     public const uint EVENT_OBJECT_SHOW = 0x8002;
     public const uint EVENT_OBJECT_HIDE = 0x8003;
+    public const uint EVENT_SYSTEM_MINIMIZESTART = 0x0016;
+    public const uint EVENT_SYSTEM_MINIMIZEEND = 0x0017;
+    public const uint EVENT_OBJECT_REORDER = 0x8004;
+    public const uint EVENT_OBJECT_FOCUS = 0x8005;
+    public const uint EVENT_OBJECT_SELECTION = 0x8006;
+    public const uint EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
     public const uint EVENT_OBJECT_NAMECHANGE = 0x800C;
 
     // DWM Attributes
@@ -91,4 +96,30 @@ public static class NativeConstants
     public const int SW_SHOWNORMAL = 1;
     public const int SW_SHOWNOACTIVATE = 4;
     public const int SW_RESTORE = 9;
+
+    // Virtual-Key Codes used by background message injection
+    public const uint VK_RETURN = 0x0D;
+    public const uint VK_TAB = 0x09;
+    public const uint VK_ESCAPE = 0x1B;
+    public const uint VK_SPACE = 0x20;
+    public const uint VK_BACK = 0x08;
+
+    // SendMessageTimeout flags
+    public const uint SMTO_BLOCK = 0x0001;
+    public const uint SMTO_ABORTIFHUNG = 0x0002;
+
+    // RegisterHotKey error codes
+    public const int ERROR_HOTKEY_ALREADY_REGISTERED = 1409;
+    public const int ERROR_WINDOW_OF_OTHER_THREAD = 1408;
+
+    // WM_APP range: custom messages must live in this range to avoid collisions with
+    // third-party libraries using WM_USER (0x0400..0x07FF) and system messages
+    public const uint WM_APP = 0x8000;
+
+    // Custom message owned by the message pump, placed in the WM_APP range
+    // to avoid colliding with third-party libraries using WM_USER (0x0400..0x07FF)
+    public const uint WM_EXECUTE_ACTION = WM_APP + 1;
+
+    // Special parent handle: message-only window
+    public static readonly IntPtr HWND_MESSAGE = new(-3);
 }

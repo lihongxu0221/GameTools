@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
 
   <!--
     统一构建设置。各 csproj 不再重复声明 TargetFrameworks / LangVersion / Nullable 等属性。
@@ -6,19 +6,35 @@
 
     说明：以下 ItemGroup 使用 $(TargetFramework) 条件。在多目标构建中，props 于外层调度阶段求值时
     TargetFramework 为空，条件不成立故不引入；内层按 TFM 求值时 net8 不引入、net48 引入，符合预期。
+
+    UI 框架策略：
+      - GameTools.App 使用 WPF（UseWPF=true，UseWindowsForms=false）
+      - GameTools.Infrastructure 保留 WinForms，因 BackgroundMessagePump 与 WindowsInputSimulator
+        直接依赖 NativeWindow / ApplicationContext / Keys 等 WinForms 类型
+      - 其余工程不启用任何 UI 框架
   -->
   <PropertyGroup>
     <TargetFrameworks>net8.0-windows;net48</TargetFrameworks>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
     <NeutralLanguage>zh-Hans</NeutralLanguage>
     <Version>0.1.0</Version>
+    <UseWindowsForms>false</UseWindowsForms>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(MSBuildProjectName)' == 'GameTools.Infrastructure' ">
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(MSBuildProjectName)' == 'GameTools.Tests' ">
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+
 
   <!--
     DPI 感知：net8.0-windows 由 WinForms 托管 API 提供；net48 无对应 API，必须依赖 app.manifest 声明。
@@ -29,7 +45,11 @@
   </PropertyGroup>
 
   <!-- net48 缺失的语言特性垫片与手写全局 using；net8 目标由编译器与 ImplicitUsings 提供，不引入本文件。 -->
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+  <!--
+    垫片目标：net48（.NET Framework 缺少语言特性内省类型）与 netstandard2.0（记录类型需要 IsExternalInit）。
+    其余目标（net8.0-windows）由运行时提供，不得引入本文件。
+  -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' OR '$(TargetFramework)' == 'netstandard2.0' ">
     <Compile Include="$(MSBuildThisFileDirectory)build\Net48Shims.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)build\Net48GlobalUsings.cs" />
     <PackageReference Include="System.Threading.Channels" />

@@ -1,16 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <RootNamespace>GameTools.App</RootNamespace>
     <AssemblyName>GameTools.App</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>false</UseWindowsForms>
+    <StartupObject>GameTools.App.Services.EntryPoint</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\GameTools.Core\GameTools.Core.csproj" />
     <ProjectReference Include="..\GameTools.Win32\GameTools.Win32.csproj" />
     <ProjectReference Include="..\GameTools.Infrastructure\GameTools.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Prism.DryIoc" />
+    <PackageReference Include="NLog" />
+    <PackageReference Include="NLog.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="NLog.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

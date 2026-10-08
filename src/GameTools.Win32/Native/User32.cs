@@ -104,12 +104,20 @@ public static class User32
     public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
     // WinEvent APIs
+    /// <summary>
+    /// 注册窗口事件钩子。
+    /// 传入空的 <c>lpfnWinEventProc</c> 与全零范围可解除该事件类型的订阅。
+    /// </summary>
+    /// <remarks>
+    /// <c>WINEVENT_OUTOFCONTEXT</c> 事件派发到创建该钩子的线程，
+    /// 因此调用必须发生在运行消息循环的线程上。
+    /// </remarks>
     [DllImport(LibraryName, SetLastError = true)]
     public static extern IntPtr SetWinEventHook(
         uint eventMin,
         uint eventMax,
         IntPtr hmodWinEventProc,
-        WinEventDelegate lpfnWinEventProc,
+        WinEventDelegate? lpfnWinEventProc,
         uint idProcess,
         uint idThread,
         uint dwFlags);
@@ -118,17 +126,71 @@ public static class User32
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
 
+    /// <summary>
+    /// 发送带超时的同步消息。跨进程调用必须使用本方法：目标进程挂起时
+    /// 同步 SendMessage 会让调用方无限阻塞。
+    /// </summary>
+    [DllImport(LibraryName, SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr SendMessageTimeout(
+        IntPtr hWnd,
+        uint msg,
+        IntPtr wParam,
+        [MarshalAs(UnmanagedType.LPWStr)] string lParam,
+        uint fuFlags,
+        uint uTimeout,
+        out IntPtr lpdwResult);
+
+    /// <summary>
+    /// 发送带超时的同步消息（数值参数版本）。
+    /// </summary>
+    [DllImport(LibraryName, SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr SendMessageTimeout(
+        IntPtr hWnd,
+        uint msg,
+        IntPtr wParam,
+        IntPtr lParam,
+        uint fuFlags,
+        uint uTimeout,
+        out IntPtr lpdwResult);
+
     // Message loop APIs
-    [DllImport(LibraryName, SetLastError = true)]
-    public static extern sbyte GetMessage(out System.Windows.Forms.Message lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
 
-    [DllImport(LibraryName, SetLastError = true)]
+    /// <summary>
+    /// 检索队列中的消息。
+    /// </summary>
+    /// <remarks>
+    /// 使用原生 <see cref="MSG"/> 结构与 BOOL 返回值。
+    /// 历史缺陷：此前误用 WinForms 的 <c>System.Windows.Forms.Message</c> 作为 MSG 参数、
+    /// 且返回类型声明为 <c>sbyte</c>，两者均与 Win32 契约不符，会导致结构越界与返回判断错误。
+    /// </remarks>
+    /// <returns>非零表示取到消息；0 表示收到 WM_QUIT；-1 表示出错（见 Marshal.GetLastWin32Error）。</returns>
+    [DllImport(LibraryName, SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+    /// <summary>
+    /// 转换消息。
+    /// </summary>
+    [DllImport(LibraryName, SetLastError = true, CharSet = CharSet.Auto)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool TranslateMessage(ref System.Windows.Forms.Message lpMsg);
+    public static extern bool TranslateMessage(ref MSG lpMsg);
 
-    [DllImport(LibraryName, SetLastError = true)]
-    public static extern IntPtr DispatchMessage(ref System.Windows.Forms.Message lpMsg);
+    /// <summary>
+    /// 向窗口过程派发消息。
+    /// </summary>
+    [DllImport(LibraryName, SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr DispatchMessage(ref MSG lpMsg);
 
+    /// <summary>
+    /// 向消息队列投递 WM_QUIT。
+    /// </summary>
     [DllImport(LibraryName, SetLastError = true)]
     public static extern void PostQuitMessage(int nExitCode);
+
+    /// <summary>
+    /// 判断窗口句柄是否仍指向有效窗口。
+    /// </summary>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindow(IntPtr hWnd);
+
 }

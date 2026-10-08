@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\src\GameTools.Core\GameTools.Core.csproj" />
     <ProjectReference Include="..\..\src\GameTools.Win32\GameTools.Win32.csproj" />
     <ProjectReference Include="..\..\src\GameTools.Infrastructure\GameTools.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\GameTools.App\GameTools.App.csproj" />
   </ItemGroup>
 
 </Project>
