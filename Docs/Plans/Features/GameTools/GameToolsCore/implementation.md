@@ -32,6 +32,7 @@
 
 | 验证项 | 结果 |
 | --- | --- |
+| 2026-10-08 19:15:00 +08:00 | 记录 S1-S8 实现与验证：版本探测去 shim、窗口边界语义拆分、钩子宿主线程统一、有界事件流、消息泵超时取消、输入正确性、Core 平台无关化、应用宿主重写、P/Invoke 契约修正、测试体系扩充（13 → 75 项）；双 SDK 双目标构建与测试全部通过。 |
 | 2026-10-08 19:10:00 +08:00 | 记录 S8 技术选型决策与兼容性实测：确认 WPF 多目标与 Prism 9.0.537、NLog 5.4.0 在 net48 与 net8.0-windows 双目标下可用，不抬高 VS 2022 17.8 下限。 |
 | 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 |
 | 双目标构建 dotnet build GameTools.slnx | 成功，5 个工程，0 警告 0 错误，4.83s |
@@ -53,6 +54,7 @@
 
 | 项 | 变更前 | 变更后 |
 | --- | --- |
+| 2026-10-08 19:15:00 +08:00 | 记录 S1-S8 实现与验证：版本探测去 shim、窗口边界语义拆分、钩子宿主线程统一、有界事件流、消息泵超时取消、输入正确性、Core 平台无关化、应用宿主重写、P/Invoke 契约修正、测试体系扩充（13 → 75 项）；双 SDK 双目标构建与测试全部通过。 |
 | 2026-10-08 19:10:00 +08:00 | 记录 S8 技术选型决策与兼容性实测：确认 WPF 多目标与 Prism 9.0.537、NLog 5.4.0 在 net48 与 net8.0-windows 双目标下可用，不抬高 VS 2022 17.8 下限。 |
 | 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 | --- |
 | 解决方案 | GameTools.slnx（XML 格式） | GameTools.sln（经典 Format Version 12.00），含 src 与 tests 两个解决方案文件夹 |
@@ -66,8 +68,10 @@
 
 | SDK | 解决方案 | 构建 | net8.0-windows | net48 |
 | --- | --- |
+| 2026-10-08 19:15:00 +08:00 | 记录 S1-S8 实现与验证：版本探测去 shim、窗口边界语义拆分、钩子宿主线程统一、有界事件流、消息泵超时取消、输入正确性、Core 平台无关化、应用宿主重写、P/Invoke 契约修正、测试体系扩充（13 → 75 项）；双 SDK 双目标构建与测试全部通过。 |
 | 2026-10-08 19:10:00 +08:00 | 记录 S8 技术选型决策与兼容性实测：确认 WPF 多目标与 Prism 9.0.537、NLog 5.4.0 在 net48 与 net8.0-windows 双目标下可用，不抬高 VS 2022 17.8 下限。 |
 | 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 | --- | --- |
+| 2026-10-08 19:15:00 +08:00 | 记录 S1-S8 实现与验证：版本探测去 shim、窗口边界语义拆分、钩子宿主线程统一、有界事件流、消息泵超时取消、输入正确性、Core 平台无关化、应用宿主重写、P/Invoke 契约修正、测试体系扩充（13 → 75 项）；双 SDK 双目标构建与测试全部通过。 |
 | 2026-10-08 19:10:00 +08:00 | 记录 S8 技术选型决策与兼容性实测：确认 WPF 多目标与 Prism 9.0.537、NLog 5.4.0 在 net48 与 net8.0-windows 双目标下可用，不抬高 VS 2022 17.8 下限。 | --- |
 | 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 |
 | 8.0.420 | GameTools.sln | 0 警告 0 错误 | 13 通过 | 13 通过 |
@@ -86,6 +90,7 @@
 
 | 验证项 | 结果 |
 | --- | --- |
+| 2026-10-08 19:15:00 +08:00 | 记录 S1-S8 实现与验证：版本探测去 shim、窗口边界语义拆分、钩子宿主线程统一、有界事件流、消息泵超时取消、输入正确性、Core 平台无关化、应用宿主重写、P/Invoke 契约修正、测试体系扩充（13 → 75 项）；双 SDK 双目标构建与测试全部通过。 |
 | 2026-10-08 19:10:00 +08:00 | 记录 S8 技术选型决策与兼容性实测：确认 WPF 多目标与 Prism 9.0.537、NLog 5.4.0 在 net48 与 net8.0-windows 双目标下可用，不抬高 VS 2022 17.8 下限。 |
 | WPF 多目标（net8.0-windows + net48，UseWPF） | 0 警告 0 错误，两目标产物均生成 |
 | Prism.DryIoc 9.0.537 | 双目标还原与编译通过；传递依赖 Prism.Core/Events/Wpf 9.0.537、Prism.Container.Abstractions/DryIoc 9.0.106 |
@@ -98,9 +103,40 @@
 
 架构影响：现有 `Directory.Build.props` 全局设置 `UseWindowsForms=true`，WPF 应用引入该属性会带来无关 WinForms 依赖并触发 WFAC010 诊断。因此改为按项目条件设置：App 启用 WPF 且显式关闭 WinForms；Infrastructure 因 `WindowsInputSimulator` 与 `BackgroundMessagePump` 依赖 `System.Windows.Forms`（`Keys`、`NativeWindow`、`ApplicationContext`）继续保留 WinForms。
 
+
+### S1-S8 实现与验证（2026-10-08 19:00）
+
+提交 `46684df`。范围：平台一致性、钩子宿主线程、稳定性与退出、功能缺口、验证体系、Core 去平台依赖、应用宿主重写。
+
+关键实现要点：
+
+1. **版本探测去 shim**：`OSVersionProvider` 改用 `ntdll!RtlGetVersion`，抽象为 `IOsVersionProvider` 便于注入。实测在当前系统返回 Build 26200（真实构建号），对比 shim 截断值 6.2 可确认改造生效。
+2. **窗口边界语义拆分**：`GetWindowBounds` 返回可见边界（DWM 扩展边界，排除不可见边框），`GetPrintWindowSize` 返回绘制尺寸（完整外框）。`PrintWindow` 按完整外框绘制，混用会导致右侧与底部被裁切。
+3. **钩子宿主线程统一**：两个 Hook Manager 注入 `IBackgroundMessagePump`，安装与卸载均在消息线程完成；`UnhookWinEvent` 跨线程会失败，卸载失败时保留委托根。
+4. **有界事件流**：低级钩子容量 4096、WinEvent 2048，均为 `DropOldest` 并暴露丢弃计数。载荷改为 `readonly record struct`，消除回调路径堆分配。
+5. **消息泵超时与取消**：`InvokeFunc` 提供带超时与取消重载；取消检查前置到入队之前；停机后调用立即失败而非永久等待。
+6. **输入正确性**：代理对成组投递；`WM_KEYUP` 的 `lParam` 按 Win32 约定置位并补发 `WM_CHAR`；`WM_SETTEXT` 改用 `SendMessageTimeout`；`SendInput` 与 `PostMessage` 返回值检查。
+7. **Core 平台无关化**：收敛为 `netstandard2.0`，新增 `VirtualKey`、`CaptureBounds`、`CaptureFrame` 三个值对象；契约不再出现 `Keys`、`Bitmap`、`Rectangle`。转换器（`VirtualKeyConverter`、`CaptureFrameConverter`）下沉至 Infrastructure。
+8. **应用宿主重写**：WPF + Prism 9 + NLog 5.4，支持交互/仅托盘/无头三种模式。UI 框架按项目隔离：App 用 WPF 并关闭 WinForms，Infrastructure 保留 WinForms。
+9. **P/Invoke 契约修正**：`GetMessage` / `TranslateMessage` / `DispatchMessage` 原声明误用 `System.Windows.Forms.Message` 作为 `MSG` 参数且返回类型为 `sbyte`；改为原生 `MSG` 结构与 `BOOL` 返回值。
+10. **测试体系**：从 13 项冒烟扩充为 75 项，覆盖版本分支（Win7~Win11 全覆盖）、消息泵超时与取消、热键冲突分类、单实例锁边界、ViewModel 参数校验与列表上限。
+
+验证结果：
+
+| SDK | 构建 | net8.0-windows | net48 |
+| --- | --- |
+| 2026-10-08 19:15:00 +08:00 | 记录 S1-S8 实现与验证：版本探测去 shim、窗口边界语义拆分、钩子宿主线程统一、有界事件流、消息泵超时取消、输入正确性、Core 平台无关化、应用宿主重写、P/Invoke 契约修正、测试体系扩充（13 → 75 项）；双 SDK 双目标构建与测试全部通过。 | --- | --- |
+| 10.0.401 | 0 警告 0 错误 | 75 通过 | 75 通过 |
+| 8.0.420 | 0 警告 0 错误 | 75 通过 | 75 通过 |
+
+headless 启动冒烟通过，日志正确写出且版本信息为真实构建号。
+
+未验证项：Windows 7/8/8.1 真机运行、真实 Unicode 输入端到端、硬件加速窗口截图与全黑降级、GDI 句柄耐久曲线、待机 CPU 占用、WPF 界面交互、非管理员与 UIPI 受限场景。旧系统兼容性结论基于官方支持矩阵与特性探测设计，不构成实机验证结论。
+
 ## 变更记录
 | 时间 | 变更摘要 |
 | --- | --- |
+| 2026-10-08 19:15:00 +08:00 | 记录 S1-S8 实现与验证：版本探测去 shim、窗口边界语义拆分、钩子宿主线程统一、有界事件流、消息泵超时取消、输入正确性、Core 平台无关化、应用宿主重写、P/Invoke 契约修正、测试体系扩充（13 → 75 项）；双 SDK 双目标构建与测试全部通过。 |
 | 2026-10-08 19:10:00 +08:00 | 记录 S8 技术选型决策与兼容性实测：确认 WPF 多目标与 Prism 9.0.537、NLog 5.4.0 在 net48 与 net8.0-windows 双目标下可用，不抬高 VS 2022 17.8 下限。 |
 | 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 |
 | 2026-10-08 16:35:00 +08:00 | 记录 RegisterHotKey 跨线程 1408 解决机制与全功能验证成果。 |
