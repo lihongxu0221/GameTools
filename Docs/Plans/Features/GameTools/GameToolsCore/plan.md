@@ -45,7 +45,8 @@
 - 功能缺口：可选宿主模式、截图黑屏判定与 BGRA、输入节奏与诊断、动态进程过滤。
 - 验证体系：失败路径、并发竞态、资源耐久、双目标差异测试。
 - 架构收敛：`GameTools.Core` 去除 WinForms 与 System.Drawing 依赖。
-- 文档同步：五份文档与用户手册与实现对齐。
+- 应用宿主重写：`GameTools.App` 由控制台 + WinForms 托盘改为 WPF + Prism + NLog（保留多目标与 net48 兼容）。
+- 文档同步：五份文档、`README.md` 与使用与运维手册（HTML）与实现对齐。
 
 ### 4.2 非目标（本轮明确不做）
 
@@ -53,7 +54,7 @@
 - 不做图像识别、OCR、像素分析等算法能力。
 - 不做跨平台（Linux/macOS）支持；`GameTools.Core` 平台无关化仅为契约质量，不代表新增平台。
 - 不做配置持久化存储引擎（仅内存配置热更新管道）。
-- 不引入第三方 UI 框架、日志框架或依赖注入容器。
+- 第三方依赖范围锁定为 WPF 应用所必需的 Prism（MVVM 与容器）与 NLog（日志），不额外引入其他 UI 框架、ORM、通信或遥测库。
 - 不搭建自动化 CI 流水线（本轮验证以本地命令为准）。
 
 ## 5. 受影响模块
@@ -63,7 +64,7 @@
 | `src/GameTools.Core` | 目标框架改 `netstandard2.0`；新增平台无关值对象；接口签名调整 | 高（破坏性 API 变更） |
 | `src/GameTools.Win32` | 版本探测改造、消息循环 P/Invoke 签名修正、窗口边界与 DPI 适配 | 中 |
 | `src/GameTools.Infrastructure` | 钩子宿主线程化、消息泵超时、事件队列有界化、输入诊断、截图黑屏判定与 BGRA | 高 |
-| `src/GameTools.App` | 可选宿主模式、退出唤醒、配置热更新、异常回滚 | 中 |
+| `src/GameTools.App` | 由 WinForms 控制台宿主重写为 WPF + Prism(MVVM/DryIoc) + NLog；可选宿主模式、退出唤醒、配置热更新、异常回滚 | 高（技术栈替换） |
 | `tests/GameTools.Tests` | 双目标执行、新增失败/并发/资源/差异测试 | 中 |
 | 工程根 | `Directory.Build.props`、`Directory.Packages.props`、`global.json`、`.editorconfig`、`app.manifest` | 中 |
 
@@ -80,6 +81,8 @@
 | Core 破坏性 API 变更 | 调用方签名不兼容 | 独立提交、单独可回退；提供值对象转换器；由测试保护网覆盖 |
 | 事件队列有界化后可能丢弃事件 | 高频场景丢事件 | 容量可配置加丢弃计数可观测；健康状态丢弃率阈值纳入验收 |
 | 旧系统 GDI+ 与新运行时编码差异 | PNG 字节可能不一致 | 按目标分别定义期望值，不假设字节一致 |
+| WPF 技术栈替换引入新依赖 | Prism 与 NLog 需同时支持 net48 与 net8.0-windows，且不得抬高 VS 17.8 下限 | 已实测 Prism 9.0.537 与 NLog 5.4.0 在双目标下可解析并编译；WPF 多目标在 SDK 8.0.420 下 0 警告 0 错误 |
+| WPF 应用不应引用 WinForms | 现有统一 `UseWindowsForms=true` 会给 WPF 应用引入无关依赖与 WFAC010 诊断 | `Directory.Build.props` 改为按项目条件设置，App 关闭 WinForms 并启用 WPF |
 
 ## 7. 验收标准
 
@@ -95,6 +98,7 @@
 | GDI 资源 | 连续 10000 次截图后 `GetGuiResources` 的 GDI 增量不超过 5 |
 | 托管内存 | 钩子运行 1 小时托管堆增长小于 5MB |
 | 启动时间 | 进程启动到消息泵就绪小于 1s |
+| App 技术栈 | `GameTools.App` 为 WPF + Prism + NLog；双目标构建 0 警告 0 错误；Prism 容器可解析全部核心服务；NLog 输出文件与控制台双通道 |
 
 ### 7.2 待需求方确认的阈值（缺口，不得自行宣称达标）
 
@@ -160,5 +164,6 @@
 | 时间 | 变更摘要 |
 | --- | --- |
 | 2026-10-08 17:40:00 +08:00 | 依据两份复核报告重写计划：技术前提由「.NET 8 与 Win7」修正为多目标 `net8.0-windows;net48`；补齐范围与非目标、受影响模块、兼容风险、可度量验收标准、验证方案、回退方案、文档与输出目录、分支与基线记录等强制章节；阶段状态表对齐实现现状并指向 S0–S7 改进路线。 |
+| 2026-10-08 19:10:00 +08:00 | 追加应用宿主重写范围：`GameTools.App` 由控制台 + WinForms 改为 WPF + Prism + NLog（用户指定），并据此调整受影响模块风险等级、兼容风险与验收标准；新增 `README.md` 与使用与运维手册为交付物。 |
 | 2026-10-08 18:40:00 +08:00 | 补充工具链兼容基线：解决方案由 `.slnx` 改为经典 `GameTools.sln`（兼容 VS 2022 17.8 之前的版本），`global.json` 基线放宽为 8.0.100 + rollForward latestMajor，新增 `toolchain-compatibility.md` 记录最低版本、约束来源与新特性引入检查清单。 |
 | 2026-10-08 17:50:00 +08:00 | 按仓库文档目录规范迁移本专题：五段式文档由 `Docs/GameToolsCore/` 迁至 `Docs/Plans/Features/GameTools/GameToolsCore/`（单项目专属功能特性），同步更新第 8 节与第 10 节的文档及产物路径表述。 || 2026-10-08 15:58:00 +08:00 | 创建计划文档，明确 .NET 8 与 Win7+ 平台架构目标与分阶段计划。 |

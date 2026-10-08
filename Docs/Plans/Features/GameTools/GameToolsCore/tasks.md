@@ -58,7 +58,7 @@
 
 ### S4 功能缺口与契约修正（TASK-15）
 
-- [ ] **TASK-15.1**：可选宿主模式（控制台、仅托盘、无头）与 `args` 解析；运行中配置热更新管道。
+- [ ] **TASK-15.1**：`GameTools.App` 技术栈替换为 WPF + Prism + NLog；可选宿主模式（交互窗口、仅托盘、无头）与 `args` 解析；运行中配置热更新管道。
 - [ ] **TASK-15.2**：截图黑屏判定与降级原因回传（区分合法全黑画面与故障）；新增 BGRA 像素导出并定义 stride、alpha、行方向约定。
 - [ ] **TASK-15.3**：输入节奏增加随机抖动配置与参数合法性校验；Unicode 文本按代理对成组投递且组内不插入延迟。
 - [ ] **TASK-15.4**：钩子过滤支持进程名与在线更新；键鼠目标 PID 拆分；前台 PID 在事件发生时采样。
@@ -91,10 +91,24 @@
 - [ ] **TASK-18.3**：`implementation.md` 记录基线 SHA `20d5a4c`、功能分支与各阶段验收日志。
 - [ ] **TASK-18.4**：`tasks.md` 按实际验证结果勾选，并撤回无证据的完成声明。
 - [ ] **TASK-18.5**：用户手册 HTML 与修复后行为对齐（多目标说明、Unicode 与代理对、截图降级）。
+### S8 应用宿主重写与交付文档（TASK-19）
+
+- [ ] **TASK-19.1**：`Directory.Build.props` 改为按项目条件设置 UI 框架（App 启用 WPF 并关闭 WinForms；Infrastructure 保留 WinForms 以支持 `SystemInformation`、`NotifyIcon` 依赖的兼容路径）。
+- [ ] **TASK-19.2**：新增 `Prism.DryIoc`、`NLog`、`NLog.Extensions.Logging` 依赖（版本写入 `Directory.Packages.props`，须同时支持 net48 与 net8.0-windows）。
+- [ ] **TASK-19.3**：建立 Prism 应用骨架：`App.xaml`/`App.xaml.cs`（容器注册与模块装配）、`MainWindow`、ViewModel 基类约定。
+- [ ] **TASK-19.4**：以 Prism 容器注册核心服务（消息泵、单实例锁、截图、热键、输入模拟、钩子管理器），替换原手工 `new`。
+- [ ] **TASK-19.5**：接入 NLog，配置文件轮转与容量上限；替换现有 `Trace.WriteLine` 与 `Console.WriteLine` 诊断输出。
+- [ ] **TASK-19.6**：实现可选宿主模式：交互窗口、仅托盘（`--tray`）、无头（`--headless`）。
+- [ ] **TASK-19.7**：按 S4 修复项实现 UI 交互：截图预览与保存、窗口列表选择、热键管理、文本与按键模拟面板、钩子与进程过滤开关、实时日志视图。
+- [ ] **TASK-19.8**：新增 `README.md`（项目定位、能力清单、环境要求、快速开始、构建与测试、目录结构、兼容性说明、许可与依赖）。
+- [ ] **TASK-19.9**：重写 `Docs/GameTools_使用与运维手册.html`，覆盖 WPF 界面操作、命令行参数、日志位置与排障、部署与升级。
+- [ ] **TASK-19.10**：双目标构建与测试验证，并执行 App 启动冒烟（仅验证进程可启动与容器可解析，不注入真实输入、不截取用户桌面）。
+
 ## 变更记录
 
 | 时间 | 变更摘要 |
 | --- | --- |
+| 2026-10-08 19:10:00 +08:00 | 追加 S8 阶段（TASK-19）：`GameTools.App` 技术栈替换为 WPF + Prism + NLog，并新增 `README.md` 与使用与运维手册两项交付物。 |
 | 2026-10-08 18:40:00 +08:00 | 补充 TASK-11.9 至 11.11：解决方案改为经典 `GameTools.sln` 以兼容 VS 2022 17.8 之前版本，`global.json` 基线放宽至 SDK 8.0.100 + latestMajor，新增 `toolchain-compatibility.md`；SDK 8.0.420 与 10.0.401 双版本构建 0 警告 0 错误、双目标各 13 项测试通过。 |
 | 2026-10-08 18:15:00 +08:00 | S0 完成（TASK-11.1 至 11.8 全部勾选）：新增 Directory.Build.props、Directory.Packages.props、global.json、.editorconfig、build 目录 net48 垫片与全局 using、App manifest；5 个 csproj 去除重复属性并接入中央包管理；替换 6 处 net48 缺失 BCL 调用；52 个文本文件统一 UTF-8 BOM。双目标构建 0 警告 0 错误，13 项测试在 net8.0-windows 与 net48 下均通过。验证记录见 `Outputs/Features/GameTools/S0-工程治理与多目标_20261008-181500/`。 || 2026-10-08 17:45:00 +08:00 | 依据两份复核报告重排任务：撤回 TASK-10 的全功能验证完成勾选（复核确认验证覆盖不足），新增 S0–S7 改进任务看板（TASK-11 至 TASK-18，覆盖工程治理与多目标、平台一致性、钩子宿主线程、稳定性与退出、功能缺口、验证体系、Core 去平台依赖、文档同步）。 |
 | 2026-10-08 16:35:00 +08:00 | 各阶段功能已实现，新增 13 个单元测试，编译构建全流程完成。 |
