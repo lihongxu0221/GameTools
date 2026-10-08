@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using GameTools.App.ViewModels;
 using GameTools.Core.Abstractions;
 using GameTools.Core.Events;
@@ -121,13 +121,26 @@ public sealed class HookService : IHookService
             {
                 try
                 {
-                    // 仅保留有窗口的进程，减少列表噪声
-                    if (proc.MainWindowHandle == IntPtr.Zero)
+                    // 进程 ID 与名称是枚举结果的基本属性，读取失败意味着该进程已退出，跳过即可。
+                    int processId = proc.Id;
+                    string processName = proc.ProcessName;
+
+                    // MainWindowHandle 仅用于界面标记：钩子目标也可能是控制台或后台服务，
+                    // 不能据此过滤，否则绝大多数进程会从列表中消失。
+                    bool hasMainWindow;
+                    try
                     {
-                        continue;
+                        hasMainWindow = proc.MainWindowHandle != IntPtr.Zero;
+                    }
+                    catch (Exception ex)
+                    {
+                        // 跨进程窗口探测可能因权限不足失败，此时按“无窗口”呈现，不影响枚举结果
+                        System.Diagnostics.Trace.WriteLine(
+                            $"读取进程 {processId} 主窗口句柄失败: {ex.Message}");
+                        hasMainWindow = false;
                     }
 
-                    result.Add(new ProcessChoice(proc.Id, proc.ProcessName));
+                    result.Add(new ProcessChoice(processId, processName, hasMainWindow));
                 }
                 catch (Exception ex)
                 {
@@ -137,7 +150,14 @@ public sealed class HookService : IHookService
             }
         }
 
-        result.Sort((a, b) => string.CompareOrdinal(a.ProcessName, b.ProcessName));
+        // 有窗口的进程排在前，其余按名称序排列，便于在长列表中定位目标
+        result.Sort((a, b) =>
+        {
+            int byWindow = b.HasMainWindow.CompareTo(a.HasMainWindow);
+            return byWindow != 0
+                ? byWindow
+                : string.CompareOrdinal(a.ProcessName, b.ProcessName);
+        });
         return result;
     }
 

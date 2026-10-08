@@ -23,12 +23,18 @@ public sealed record KeyChoice(VirtualKey Key, string DisplayName)
 /// </summary>
 /// <param name="ProcessId">进程 ID。</param>
 /// <param name="ProcessName">进程名。</param>
-public sealed record ProcessChoice(int ProcessId, string ProcessName)
+/// <param name="HasMainWindow">
+/// 是否拥有可见主窗口。钩子目标既可能是窗口程序，也可能是控制台或后台服务，
+/// 故该标记只用于界面提示，不作为过滤条件。
+/// </param>
+public sealed record ProcessChoice(int ProcessId, string ProcessName, bool HasMainWindow = true)
 {
     /// <summary>
     /// 界面显示文本。
     /// </summary>
-    public string Display => $"{ProcessName} ({ProcessId})";
+    public string Display => HasMainWindow
+        ? $"{ProcessName} ({ProcessId})"
+        : $"{ProcessName} ({ProcessId}) [无窗口]";
 
     /// <inheritdoc />
     public override string ToString() => Display;
@@ -513,14 +519,28 @@ public sealed class MainViewModel : BindableBase
     public event EventHandler? ShutdownRequested;
 
     /// <summary>
-    /// 刷新可见窗口列表。
+    /// 刷新可见窗口列表，并在替换集合后尽量恢复原选中项。
     /// </summary>
+    /// <remarks>
+    /// 列表项为不可变记录，集合整体替换会使 <see cref="SelectedWindow"/> 绑定回落到
+    /// <c>null</c>，用户每次刷新都要重新选择目标。此处按句柄恢复选中项，
+    /// 句柄失效（窗口已关闭）时保持为空，这是预期结果。
+    /// </remarks>
     public void RefreshWindows()
     {
         try
         {
+            IntPtr previous = SelectedWindow?.Handle ?? IntPtr.Zero;
+
             IReadOnlyList<WindowInfo> found = _capture.ListTopLevelWindows();
-            Windows = new ObservableCollection<WindowInfo>(found.Take(200));
+            var refreshed = new ObservableCollection<WindowInfo>(found.Take(200));
+            Windows = refreshed;
+
+            if (previous != IntPtr.Zero)
+            {
+                SelectedWindow = refreshed.FirstOrDefault(w => w.Handle == previous);
+            }
+
             StatusBar = $"已发现 {found.Count} 个可见窗口";
         }
         catch (Exception ex)
@@ -530,13 +550,24 @@ public sealed class MainViewModel : BindableBase
     }
 
     /// <summary>
-    /// 刷新进程列表。
+    /// 刷新进程列表，并在替换集合后尽量恢复原选中项。
     /// </summary>
+    /// <remarks>
+    /// 同 <see cref="RefreshWindows"/>：按进程 ID 恢复选中项，进程已退出时保持为空。
+    /// </remarks>
     public void RefreshProcesses()
     {
         try
         {
-            Processes = new ObservableCollection<ProcessChoice>(_hooks.ListProcesses());
+            int previous = SelectedProcess?.ProcessId ?? 0;
+
+            var refreshed = new ObservableCollection<ProcessChoice>(_hooks.ListProcesses());
+            Processes = refreshed;
+
+            if (previous > 0)
+            {
+                SelectedProcess = refreshed.FirstOrDefault(p => p.ProcessId == previous);
+            }
         }
         catch (Exception ex)
         {

@@ -104,10 +104,56 @@
 - [x] **TASK-19.9**：重写 `Docs/GameTools_使用与运维手册.html`，覆盖 WPF 界面操作、命令行参数、日志位置与排障、部署与升级。
 - [x] **TASK-19.10**：双目标构建与测试验证，并执行 App 启动冒烟（仅验证进程可启动与容器可解析，不注入真实输入、不截取用户桌面）。
 
+## S9 应用宿主运行期缺陷修复（2026-10-08 21:40）
+
+用户实测反馈「无法获取窗口句柄，也无法获取到进程」，管理员模式下同样复现。
+
+- [x] **TASK-20.1**：排除权限假设并逐层实测底层枚举（`EnumWindows` 回调 836 次、可见窗口 24 个、`FindTopLevelWindows` 13 个、进程 422 个），确认底层正常、问题在应用层装配。
+- [x] **TASK-20.2**：修复 `App.CreateShell` 缺失装配——显式赋值 `MainWindow.DataContext`，并桥接钩子与窗口事件到界面事件流、接管 `ShutdownRequested`、按运行模式决定最小化。
+- [x] **TASK-20.3**：补齐 `RegisterTypes` 注册（`MainViewModel` 与四个应用层服务），并以 `RegisterSingleton<Dispatcher>(factoryMethod: ...)` 绑定 `Application.Current.Dispatcher`，解决容器无法解析静态属性的问题。
+- [x] **TASK-20.4**：取消 `ListProcesses` 中 `MainWindowHandle != 0` 过滤，改为 `ProcessChoice.HasMainWindow` 标记（仅用于 `[无窗口]` 提示与排序），并对主窗口句柄读取单独容错。实测 11 → 424 个进程。
+- [x] **TASK-20.5**：新增 `ProcessEnumerationTests` 8 项回归测试（75 → 83 项），双目标通过，构建 0 警告 0 错误。
+- [x] **TASK-20.6**：headless 模式有界启动验证（存活 6 秒、无 stderr）。
+- [x] **TASK-20.7**：清除 `implementation.md` 中因脚本写入缺陷被注入正文的 12 行变更记录，复核其余五份文档未受同类污染。
+
+未完成项：WPF 数据绑定在真实可见窗口中的渲染效果需用户在本机确认；本次探针仅验证 `DataContext` 赋值与集合填充，未覆盖布局与主题呈现。
+
+## S10 界面布局与手动刷新（2026-10-08 22:10）
+
+用户反馈左侧面板多处按钮与下拉框显示不全，且窗口与进程下拉框缺少手动刷新按钮。
+
+- [x] **TASK-21.1**：定位裁切根因——14 处横向 `StackPanel` 不换行，实测需 728~734px 而可用宽度仅约 600px。
+- [x] **TASK-21.2**：修复主区列布局：`GridSplitter` 原放在 `*` 列吞掉全部剩余空间，日志面板被挤压；改为 3 列（640 / 4 / `*`），分隔条独立成列并补 `ResizeBehavior` / `ResizeDirection`，左右列补 Min/Max 约束使拖拽生效。
+- [x] **TASK-21.3**：14 处横向 `StackPanel` 改为 `WrapPanel` 自动换行，状态 `TextBlock` 移出按钮同行；4 个标签页 `ScrollViewer` 增加横向滚动兜底。
+- [x] **TASK-21.4**：4 个窗口/进程下拉框改用 `ItemTemplate` 约束弹出列表宽度并加省略号，保留 `TextSearch.TextPath` 前缀搜索，补 `MaxDropDownHeight` 与完整内容 `ToolTip`。
+- [x] **TASK-21.5**：补齐 4 个刷新按钮（两个「刷新窗口」、两个「刷新进程」），绑定已存在但此前未接线的 `RefreshWindowsCommand` / `RefreshProcessesCommand`。
+- [x] **TASK-21.6**：`RefreshWindows` / `RefreshProcesses` 按句柄与进程 ID 恢复选中项，避免刷新后需重新选择目标。
+- [x] **TASK-21.7**：新增布局探针，四档窗口尺寸（1000×560 / 1100×600 / 1280×760 / 1920×1080）实测 5 个标签页均未发现裁切。
+- [x] **TASK-21.8**：新增 `SelectionPersistenceTests` 5 项回归测试，双目标 88 项通过，Release 构建 0 警告 0 错误。
+
+未完成项：DPI 缩放（125% / 150%）下的布局表现未实测，探针在 100% 缩放下运行。
+
+## S11 消息泵未启动与 Trace 日志递归（2026-10-08 22:35）
+
+用户实测钩子与窗口事件全部报「消息泵尚未启动或窗口句柄无效」。
+
+- [x] **TASK-22.1**：定位 `BackgroundMessagePump.Start()` 只在 `HeadlessHost.Run()` 中调用，WPF 交互与托盘模式从不启动，但容器照常注册该单例。
+- [x] **TASK-22.2**：在 `CreateShell` 解析任何依赖服务之前启动消息泵（`RegisterHotKey`、`SetWinEventHook`、`UnhookWinEvent` 均需与 HWND 同线程）；启动失败降级提示而不中断进程。
+- [x] **TASK-22.3**：`OnExit` 在 Prism 释放容器单例之前显式 `Stop()` 消息泵，使钩子有机会在消息线程完成 `UnhookWinEvent`。
+- [x] **TASK-22.4**：`SingleInstanceLock` 由局部变量提升为字段并在 `OnExit` 释放，避免互斥量提前释放导致单实例保护失效。
+- [x] **TASK-22.5**：重写 `TraceLog`，移除重写方法内对 `Trace.WriteLine` 的转发（该递归使进程以 `0xC00000FD` 栈溢出终止且无可捕获异常），并在类型文档中固化实现约束。
+- [x] **TASK-22.6**：新增 `TraceLogTests` 4 项回归测试，含哨兵监听器使递归回归时以可诊断异常失败而非崩溃测试宿主；置于 `DisableParallelization` 集合避免污染 `Trace.Listeners` 全局状态。
+- [x] **TASK-22.7**：探针实测勾选钩子 → 应用 → 停止 → 启动窗口事件 → 停止，五步全部成功，Debug 与 Release 两套配置验证；Debug 下确认 NLog 文件写入消息泵句柄与库层 Trace 桥接内容。
+
+未完成项：长时间挂机下消息泵线程与 GDI 句柄的增长曲线未测量。
+
 ## 变更记录
 
 | 时间 | 变更摘要 |
 | --- | --- |
+| 2026-10-08 22:35:00 +08:00 | 新增 S11（TASK-22.1 至 22.7）：修复消息泵从未启动、退出不停止、单实例锁为局部变量、TraceLog 无限递归导致栈溢出四项缺陷；新增 4 项回归测试（88 → 92 项）。 |
+| 2026-10-08 22:10:00 +08:00 | 新增 S10（TASK-21.1 至 21.8）：修复主区列布局与分隔条吞掉剩余空间、横向容器改为自动换行、下拉框加宽度与省略号约束、补齐 4 个刷新按钮、刷新保留选中项；新增 5 项回归测试（83 → 88 项）。 |
+| 2026-10-08 21:40:00 +08:00 | 新增 S9（TASK-20.1 至 20.7）：修复 DataContext 未赋值、容器注册缺失、Dispatcher 未注册、进程枚举按窗口过滤四项缺陷；新增 8 项回归测试（75 → 83 项）；清除 implementation.md 被脚本误注入的 12 行变更记录。 |
 | 2026-10-08 19:10:00 +08:00 | 追加 S8 阶段（TASK-19）：GameTools.App 技术栈替换为 WPF + Prism + NLog，并新增 README.md 与使用与运维手册两项交付物。 |
 | 2026-10-08 19:40:00 +08:00 | 完成 TASK-18 与 19 文档任务：requirements.md 新增验证范围声明、design.md 重写为实现级约束、implementation.md 追加 S1-S8 验收日志、tasks.md 按实际结果勾选并标注未完成项原因；新增 README.md 并重写使用与运维手册 HTML。 |
 | 2026-10-08 19:45:00 +08:00 | 修正 TASK-17.1 与 19.7 描述以匹配实际实现：未单独引入 InputPoint 与 CapturePixelFormat（坐标由 CaptureBounds 承载，像素格式固定 BGRA32）。 |
