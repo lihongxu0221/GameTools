@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GameTools.App/GameTools.App.csproj" />
+    <Project Path="src/GameTools.Core/GameTools.Core.csproj" />
+    <Project Path="src/GameTools.Infrastructure/GameTools.Infrastructure.csproj" />
+    <Project Path="src/GameTools.Win32/GameTools.Win32.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GameTools.Tests/GameTools.Tests.csproj" />
+  </Folder>
+</Solution>

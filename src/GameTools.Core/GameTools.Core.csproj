@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>GameTools.Core</RootNamespace>
+    <AssemblyName>GameTools.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

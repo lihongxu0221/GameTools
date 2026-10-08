@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameTools 底层系统开发与运维手册 (Wiki 离线版)</title>
+    <style>
+:root {
+    --primary: #0284c7;
+    --primary-dark: #0369a1;
+    --primary-light: #e0f2fe;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --code-bg: #0f172a;
+    --code-text: #e2e8f0;
+    --sidebar-w: 290px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background-color: var(--bg-page);
+    color: var(--text-main);
+    line-height: 1.65;
+    font-size: 15px;
+}
+
+/* Layout */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-w);
+    background: #0f172a;
+    color: #f1f5f9;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    border-right: 1px solid #1e293b;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    z-index: 100;
+}
+
+.brand {
+    padding: 20px 18px;
+    border-bottom: 1px solid #1e293b;
+    background: #090e1a;
+}
+.brand-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #38bdf8;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.brand-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.search-box {
+    padding: 12px 16px;
+    border-bottom: 1px solid #1e293b;
+}
+.search-input {
+    width: 100%;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #f8fafc;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.search-input:focus {
+    border-color: #38bdf8;
+}
+
+.nav-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 8px;
+}
+.nav-group {
+    margin-bottom: 14px;
+}
+.nav-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 12px 14px 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.nav-group-title::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 11px;
+    background: #38bdf8;
+    border-radius: 2px;
+}
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 9px 14px;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 13.5px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-left: 3px solid transparent;
+}
+.nav-item:hover {
+    background: #1e293b;
+    color: #ffffff;
+}
+.nav-item.active {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    font-weight: 600;
+    border-left-color: #38bdf8;
+}
+
+.sidebar-footer {
+    padding: 14px 18px;
+    border-top: 1px solid #1e293b;
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.print-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #cbd5e1;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.print-btn:hover { background: #334155; color: #fff; }
+
+.main-content {
+    flex: 1;
+    max-width: 1040px;
+    padding: 36px 48px 60px 48px;
+    margin: 0 auto;
+    width: calc(100% - var(--sidebar-w));
+}
+
+.chapter-section {
+    display: none;
+    animation: fadeIn 0.25s ease-in-out;
+}
+.chapter-section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Typography */
+h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 12px;
+    margin: 20px 0 20px 0;
+}
+h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 28px 0 14px 0;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 6px;
+}
+h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #334155;
+    margin: 22px 0 10px 0;
+}
+h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    margin: 16px 0 8px 0;
+}
+
+.doc-p {
+    margin-bottom: 14px;
+    color: #334155;
+}
+
+.doc-hr {
+    border: 0;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 28px 0;
+}
+
+.anchor-link {
+    opacity: 0;
+    color: var(--primary);
+    text-decoration: none;
+    margin-left: 8px;
+    font-weight: normal;
+}
+h1:hover .anchor-link, h2:hover .anchor-link, h3:hover .anchor-link {
+    opacity: 0.6;
+}
+
+.doc-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.doc-link:hover { text-decoration: underline; }
+
+.inline-code {
+    background: #f1f5f9;
+    color: #0369a1;
+    border: 1px solid #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    font-size: 13px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 12px;
+    margin: 0 3px;
+}
+.badge-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.badge-primary { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.badge-info { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.badge-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.badge-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* Metrics Card Grid */
+.grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    border-top: 4px solid var(--primary);
+}
+.metric-card.success { border-top-color: var(--success); }
+.metric-card.warning { border-top-color: var(--warning); }
+.metric-card.danger { border-top-color: var(--danger); }
+.metric-title {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.metric-val {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 8px 0 4px 0;
+}
+.metric-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+    margin: 18px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    background: #fff;
+}
+.doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+.doc-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-bottom: 2px solid #e2e8f0;
+}
+.doc-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+.doc-table tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Code Blocks */
+.code-block-container {
+    background: var(--code-bg);
+    border-radius: 8px;
+    margin: 16px 0 20px 0;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1e293b;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #94a3b8;
+    border-bottom: 1px solid #334155;
+}
+.copy-btn {
+    background: #334155;
+    border: none;
+    color: #e2e8f0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+}
+.copy-btn:hover { background: #475569; color: #fff; }
+.code-pre {
+    padding: 14px;
+    overflow-x: auto;
+    font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+    font-size: 13px;
+    color: var(--code-text);
+    line-height: 1.5;
+}
+
+/* Callouts */
+.callout {
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 16px 0;
+    font-size: 14px;
+    border-left: 4px solid;
+}
+.callout-info { background: #f0f9ff; border-color: #0284c7; color: #0369a1; }
+.callout-tip { background: #fdf4ff; border-color: #c026d3; color: #86198f; }
+.callout-warning { background: #fffbeb; border-color: #d97706; color: #b45309; }
+.callout-danger { background: #fef2f2; border-color: #dc2626; color: #b91c1c; }
+
+/* Lists */
+.doc-list {
+    margin: 10px 0 16px 24px;
+    color: #334155;
+}
+.doc-list li {
+    margin-bottom: 6px;
+}
+
+@media print {
+    .sidebar { display: none; }
+    .main-content { width: 100%; max-width: 100%; padding: 0; }
+    .chapter-section { display: block !important; page-break-after: always; }
+}
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边导航栏 -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-title">🎮 GameTools Wiki</div>
+                <div class="brand-sub">.NET 8 / Win7+ 底层交互手册 (v1.0)</div>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" class="search-input" placeholder="搜索目录..." onkeyup="filterContent()">
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-group">
+                    <div class="nav-group-title">核心功能与实操指南</div>
+                    <a class="nav-item active" data-target="home" onclick="switchTab('home')">
+                        <span>首页与架构总览</span>
+                    </a>
+                    <a class="nav-item" data-target="quickstart" onclick="switchTab('quickstart')">
+                        <span>快速开始与演示</span>
+                    </a>
+                    <a class="nav-item" data-target="background-process" onclick="switchTab('background-process')">
+                        <span>后台进程与消息循环</span>
+                    </a>
+                    <a class="nav-item" data-target="screen-capture" onclick="switchTab('screen-capture')">
+                        <span>屏幕与窗口截图 (GDI)</span>
+                    </a>
+                    <a class="nav-item" data-target="hotkeys" onclick="switchTab('hotkeys')">
+                        <span>全局快捷键系统</span>
+                    </a>
+                    <a class="nav-item" data-target="text-input" onclick="switchTab('text-input')">
+                        <span>文本与按键模拟输入</span>
+                    </a>
+                    <a class="nav-item" data-target="hooks-monitoring" onclick="switchTab('hooks-monitoring')">
+                        <span>钩子与进程消息监听</span>
+                    </a>
+                    <a class="nav-item" data-target="win7-compatibility" onclick="switchTab('win7-compatibility')">
+                        <span>Windows 7 适配与补丁</span>
+                    </a>
+                </div>
+                <div class="nav-group">
+                    <div class="nav-group-title">工程规范与交付全景</div>
+                    <a class="nav-item" data-target="requirements" onclick="switchTab('requirements')">
+                        <span>需求规格说明书</span>
+                    </a>
+                    <a class="nav-item" data-target="design" onclick="switchTab('design')">
+                        <span>详细技术方案设计</span>
+                    </a>
+                    <a class="nav-item" data-target="plan" onclick="switchTab('plan')">
+                        <span>实施计划与里程碑</span>
+                    </a>
+                    <a class="nav-item" data-target="tasks" onclick="switchTab('tasks')">
+                        <span>任务分解与跟踪清单</span>
+                    </a>
+                    <a class="nav-item" data-target="implementation" onclick="switchTab('implementation')">
+                        <span>实施总结与交付报告</span>
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <span>GameTools Team</span>
+                <button class="print-btn" onclick="window.print()">打印/导出</button>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+
+            <!-- 1. 首页与架构总览 -->
+            <section id="home" class="chapter-section active">
+                <h1 id="gametools-概览">GameTools 底层系统交互框架 Wiki<a class="anchor-link" href="#gametools-概览">#</a></h1>
+                <p class="doc-p">基于 <strong>.NET 8</strong> 运行时面向 <strong>Windows 7 SP1 及以上（Win7 / Win8 / Win8.1 / Win10 / Win11）</strong> 平台设计的高性能底层系统交互与自动化基础套件。</p>
+
+                <div class="grid-cards">
+                    <div class="metric-card success">
+                        <div class="metric-title">运行环境</div>
+                        <div class="metric-val">.NET 8.0</div>
+                        <div class="metric-sub">net8.0-windows / C# 12</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">系统兼容基准</div>
+                        <div class="metric-val">Win7 SP1+</div>
+                        <div class="metric-sub">向下适配至 Win7，支持 Win11</div>
+                    </div>
+                    <div class="metric-card warning">
+                        <div class="metric-title">测试验证集</div>
+                        <div class="metric-val">13 / 13</div>
+                        <div class="metric-sub">全量通过，0 错误 0 告警</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">待机 CPU 占用</div>
+                        <div class="metric-val">&lt; 0.1%</div>
+                        <div class="metric-sub">独立 STA 消息泵驱动</div>
+                    </div>
+                </div>
+
+                <div class="callout callout-info">
+                    💡 <strong>五大核心能力矩阵</strong>：
+                    <br>1. <strong>后台常驻进程</strong>：单实例互斥锁守护，专用 STA 线程无界面/托盘 Win32 消息循环；
+                    <br>2. <strong>高兼容屏幕截图</strong>：支持虚拟桌面全屏、区域裁切与窗口后台 PrintWindow 抓取（Win7 降级自适应）；
+                    <br>3. <strong>系统全局快捷键</strong>：RegisterHotKey 线程亲和性调度，彻底解决 1408 跨线程注册异常；
+                    <br>4. <strong>高保真模拟输入</strong>：前台 SendInput Unicode 文本直通（免输入法干扰）与后台定向 PostMessage；
+                    <br>5. <strong>消息钩子精准监听</strong>：WH_KEYBOARD_LL / WH_MOUSE_LL（GCHandle 防回收 + Channel 管道防超时）与 SetWinEventHook 跨进程免注入监听。
+                </div>
+
+                <h2>系统分层架构体系</h2>
+                <div class="code-block-container">
+                    <div class="code-header"><span>架构依赖拓扑 (Solution Architecture)</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code>+---------------------------------------------------------------------------------+
+|                          GameTools.App (宿主应用程序)                            |
+|             - 控制台交互菜单  - 单实例守护  - 系统托盘图标  - 自动化场景串联        |
++---------------------------------------------------------------------------------+
+                                      |
++---------------------------------------------------------------------------------+
+|                     GameTools.Infrastructure (核心实现层)                        |
+|  - BackgroundMessagePump (STA 消息泵)         - GdiScreenCapture (多模式抓图)     |
+|  - Win32HotkeyManager (全局热键管理器)        - WindowsInputSimulator (模拟输入) |
+|  - LowLevelHookManager (低级键鼠钩子)         - WinEventHookManager (进程事件)   |
++---------------------------------------------------------------------------------+
+                                      |
++---------------------------------------------------------------------------------+
+|                       GameTools.Win32 (底层适配与系统互操作)                      |
+|  - User32, Gdi32, Kernel32, DwmApi 原生 P/Invoke 接口声明                        |
+|  - OSVersionHelper: Win7 / Win8.1 / Win10 / Win11 版本探测与 PrintWindow 动态降级 |
+|  - SafeGdiDcHandle / SafeGdiObjectHandle / SafeWindowDcHandle: 严格 RAII 防泄漏  |
+|  - WindowHelper: 穿透 Aero 阴影的真实坐标计算、顶级窗口枚举与进程关联             |
++---------------------------------------------------------------------------------+
+                                      |
++---------------------------------------------------------------------------------+
+|                        GameTools.Core (纯净抽象契约层)                           |
+|  - 接口: IScreenCapture, IHotkeyManager, ITextInputSimulator, ILowLevelHook...  |
+|  - 模型: WindowInfo, CaptureResult, KeyModifiers, CaptureMode                    |
+|  - 事件: HotkeyEventArgs, KeyboardHookEventArgs, MouseHookEventArgs...          |
++---------------------------------------------------------------------------------+</code></pre>
+                </div>
+            </section>
+
+            <!-- 2. 快速开始与演示 -->
+            <section id="quickstart" class="chapter-section">
+                <h1>快速开始与运行指南<a class="anchor-link" href="#quickstart">#</a></h1>
+                <p class="doc-p">GameTools 提供开箱即用的命令行与托盘一体化宿主程序，可直接用于自动化测试、功能验证与现场诊断。</p>
+
+                <h2>1. 编译构建</h2>
+                <div class="code-block-container">
+                    <div class="code-header"><span>PowerShell 编译与测试命令</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code># 1. 还原并构建整个解决方案 (Release 模式)
+dotnet build GameTools.slnx -c Release
+
+# 2. 运行全量单元测试套件
+dotnet test GameTools.slnx -c Release
+
+# 3. 启动交互式演示宿主
+dotnet run --project src/GameTools.App/GameTools.App.csproj</code></pre>
+                </div>
+
+                <h2>2. 宿主程序交互菜单</h2>
+                <p class="doc-p">启动 <code class="inline-code">GameTools.App</code> 后，主控制台呈现功能仪表盘：</p>
+                <div class="table-responsive">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>功能菜单</th>
+                                <th>底层核心机制</th>
+                                <th>说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>[1]</strong></td>
+                                <td>立即截取全屏并保存为 PNG</td>
+                                <td>GdiScreenCapture (BitBlt)</td>
+                                <td>抓取多显示器虚拟桌面并保存至 <code class="inline-code">Screenshots/</code> 目录</td>
+                            </tr>
+                            <tr>
+                                <td><strong>[2]</strong></td>
+                                <td>列出顶级窗口并后台截图</td>
+                                <td>PrintWindow (Win7 降级自适应)</td>
+                                <td>无需前置激活窗口，直接抓取后台画面</td>
+                            </tr>
+                            <tr>
+                                <td><strong>[3]</strong></td>
+                                <td>向指定窗口后台投递文本</td>
+                                <td>PostMessage (WM_CHAR)</td>
+                                <td>向指定 HWND 投递字符流，窗口无需获取焦点</td>
+                            </tr>
+                            <tr>
+                                <td><strong>[4]</strong></td>
+                                <td>前台模拟输入 Unicode 文本</td>
+                                <td>SendInput (KEYEVENTF_UNICODE)</td>
+                                <td>免除输入法干扰，精准投递中文及符号文本</td>
+                            </tr>
+                            <tr>
+                                <td><strong>[5]</strong></td>
+                                <td>开启/关闭全局键盘鼠标钩子</td>
+                                <td>WH_KEYBOARD_LL / WH_MOUSE_LL</td>
+                                <td>在控制台实时打印按键码、鼠标坐标与所属进程</td>
+                            </tr>
+                            <tr>
+                                <td><strong>[6]</strong></td>
+                                <td>监听指定进程窗口生命周期</td>
+                                <td>SetWinEventHook</td>
+                                <td>免注入跨进程监听目标 PID 的创建、激活与销毁</td>
+                            </tr>
+                            <tr>
+                                <td><strong>[0]</strong></td>
+                                <td>平稳退出程序</td>
+                                <td>SingleInstanceLock & Pump Dispose</td>
+                                <td>安全卸载所有钩子、注销热键并退出</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2>3. 默认注册的全局快捷键</h2>
+                <ul class="doc-list">
+                    <li><span class="badge badge-primary">Ctrl + Shift + S</span>：无论当前处于何种程序前台，触发全屏截图并保存。</li>
+                    <li><span class="badge badge-success">Ctrl + Shift + I</span>：向当前焦点窗口直接投递预设的 Unicode 自动化文本。</li>
+                    <li><span class="badge badge-warning">Ctrl + Shift + H</span>：动态开启或关闭全局低级键盘与鼠标钩子。</li>
+                    <li><span class="badge badge-danger">Ctrl + Shift + Q</span>：安全终结后台守护循环并退出应用。</li>
+                </ul>
+            </section>
+
+            <!-- 3. 后台进程与消息循环 -->
+            <section id="background-process" class="chapter-section">
+                <h1>后台进程与 Win32 消息泵<a class="anchor-link" href="#background-process">#</a></h1>
+                <p class="doc-p">Windows 底层系统的全局热键（<code class="inline-code">RegisterHotKey</code>）、窗口级通信（<code class="inline-code">WM_COPYDATA</code>）以及低级钩子派发，强依赖一个运行在单线程单元（STA）上的标准 Win32 消息循环（Message Pump）。</p>
+
+                <h2>1. 核心类结构</h2>
+                <p class="doc-p">位于 <code class="inline-code">GameTools.Infrastructure.Host</code> 命名空间：</p>
+                <ul class="doc-list">
+                    <li><code class="inline-code">BackgroundMessagePump</code>：专用 STA 线程驱动的后台隐藏消息窗口宿主，实现 <code class="inline-code">IBackgroundMessagePump</code>。</li>
+                    <li><code class="inline-code">SingleInstanceLock</code>：基于 Windows 命名 Mutex 的单实例防护组件。</li>
+                </ul>
+
+                <h2>2. 跨线程调用的 1408 陷阱与解决方案</h2>
+                <div class="callout callout-danger">
+                    <strong>⚠️ Win32 致命规则 (ERROR_WINDOW_OF_OTHER_THREAD = 1408)</strong>：
+                    <br>Windows 操作系统明确规定：<code class="inline-code">RegisterHotKey(hWnd, ...)</code> 与 <code class="inline-code">UnregisterHotKey(hWnd, ...)</code> <strong>必须在创建该 hWnd 的同一个线程上调用</strong>！如果外部工作线程或线程池直接调用该 API，系统将直接返回失败，错误码为 1408。
+                </div>
+
+                <div class="code-block-container">
+                    <div class="code-header"><span>BackgroundMessagePump 原生消息驱动调度设计</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code>// 1. 投递自定义执行消息至专用 STA 线程
+public T InvokeFunc&lt;T&gt;(Func&lt;T&gt; func)
+{
+    if (Thread.CurrentThread == _thread) return func();
+
+    T result = default!;
+    Exception? error = null;
+    using var ev = new ManualResetEventSlim(false);
+
+    // 将执行委托压入线程安全队列
+    _actionQueue.Enqueue(() =>
+    {
+        try { result = func(); }
+        catch (Exception ex) { error = ex; }
+        finally { ev.Set(); }
+    });
+
+    // 唤醒后台 STA 线程的 WndProc 处理该委托
+    User32.PostMessage(_window.Handle, NativeConstants.WM_EXECUTE_ACTION, IntPtr.Zero, IntPtr.Zero);
+    ev.Wait();
+
+    if (error != null)
+    {
+        ExceptionDispatchInfo.Capture(error).Throw();
+    }
+    return result;
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- 4. 屏幕与窗口截图 -->
+            <section id="screen-capture" class="chapter-section">
+                <h1>屏幕与窗口截图系统 (GdiScreenCapture)<a class="anchor-link" href="#screen-capture">#</a></h1>
+                <p class="doc-p">提供高稳定性、毫秒级响应的 GDI 屏幕抓取方案，完全克服 Windows 7 平台对高版本渲染特性的不兼容缺陷。</p>
+
+                <h2>1. 抓取方式对比</h2>
+                <div class="table-responsive">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>模式</th>
+                                <th>核心 API</th>
+                                <th>适用场景</th>
+                                <th>Win7 兼容性</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>DesktopBitBlt</strong></td>
+                                <td>User32.GetDC + Gdi32.BitBlt</td>
+                                <td>全屏截图、多显示器拼接、指定矩形裁切</td>
+                                <td><span class="badge badge-success">原生完整支持</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PrintWindow</strong></td>
+                                <td>User32.PrintWindow</td>
+                                <td>后台非激活窗口、被遮挡窗口抓取</td>
+                                <td><span class="badge badge-warning">需动态区分标志位</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>DesktopCropFallback</strong></td>
+                                <td>WindowHelper + BitBlt</td>
+                                <td>目标窗口为 DirectX/硬件加速无重绘消息时回退</td>
+                                <td><span class="badge badge-success">自动平滑降级</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2>2. Windows 7 与 8.1+ 的 PrintWindow 标志位分流</h2>
+                <div class="code-block-container">
+                    <div class="code-header"><span>GdiScreenCapture 动态降级核心代码</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code>bool printed = false;
+
+// 1. 若为 Windows 8.1 或更高系统，优先尝试 PW_RENDERFULLCONTENT (0x02)
+if (OSVersionHelper.IsWindows81OrGreater)
+{
+    printed = User32.PrintWindow(hWnd, memDc.DangerousGetHandle(), NativeConstants.PW_RENDERFULLCONTENT);
+}
+
+// 2. 若在 Windows 7 上（不支持 0x02），或高版本系统下 0x02 调用失败，自动降级为默认 0
+if (!printed)
+{
+    printed = User32.PrintWindow(hWnd, memDc.DangerousGetHandle(), NativeConstants.PW_DEFAULT);
+}</code></pre>
+                </div>
+
+                <h2>3. GDI 句柄泄漏防护 (RAII)</h2>
+                <p class="doc-p">Windows 单个进程默认 GDI 句柄上限为 10,000。高频截图必须严格保证资源释放。本系统封装了：</p>
+                <ul class="doc-list">
+                    <li><code class="inline-code">SafeGdiDcHandle</code>：析构时自动触发 <code class="inline-code">DeleteDC</code>；</li>
+                    <li><code class="inline-code">SafeWindowDcHandle</code>：析构时自动触发 <code class="inline-code">ReleaseDC(hWnd, hdc)</code>；</li>
+                    <li><code class="inline-code">SafeGdiObjectHandle</code>：析构时自动触发 <code class="inline-code">DeleteObject</code>。</li>
+                </ul>
+            </section>
+
+            <!-- 5. 全局快捷键 -->
+            <section id="hotkeys" class="chapter-section">
+                <h1>系统全局快捷键系统 (Win32HotkeyManager)<a class="anchor-link" href="#hotkeys">#</a></h1>
+                <p class="doc-p">基于底层 <code class="inline-code">RegisterHotKey</code> 构建，支持动态组合键绑定、占用冲突检测及零延迟异步回调响应。</p>
+
+                <h2>1. API 使用范例</h2>
+                <div class="code-block-container">
+                    <div class="code-header"><span>C# 热键注册代码示例</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code>// 1. 获取消息泵驱动的热键管理器
+using var pump = new BackgroundMessagePump();
+pump.Start();
+
+using var hotkeyManager = new Win32HotkeyManager(pump);
+
+// 2. 注册 Ctrl + Alt + A 快捷键并附带专用回调
+int hotkeyId = hotkeyManager.RegisterHotkey(
+    Keys.A, 
+    KeyModifiers.Control | KeyModifiers.Alt, 
+    () =>
+    {
+        Console.WriteLine("快捷键 Ctrl + Alt + A 被触发！");
+    });
+
+// 3. 注销快捷键
+hotkeyManager.UnregisterHotkey(hotkeyId);</code></pre>
+                </div>
+
+                <h2>2. 常见异常处理矩阵</h2>
+                <div class="table-responsive">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>Win32 错误码</th>
+                                <th>错误名称</th>
+                                <th>原因分析</th>
+                                <th>框架应对处理</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code class="inline-code">1409</code></td>
+                                <td>ERROR_HOTKEY_ALREADY_REGISTERED</td>
+                                <td>该热键已被其他第三方程序（如 QQ、微信）独占注册</td>
+                                <td>抛出明确提示异常，注明冲突按键</td>
+                            </tr>
+                            <tr>
+                                <td><code class="inline-code">1408</code></td>
+                                <td>ERROR_WINDOW_OF_OTHER_THREAD</td>
+                                <td>在非窗口所属线程调用了 RegisterHotKey</td>
+                                <td>框架内置 InvokeFunc 自动重定向至 STA 宿主线程</td>
+                            </tr>
+                            <tr>
+                                <td><code class="inline-code">1400</code></td>
+                                <td>ERROR_INVALID_WINDOW_HANDLE</td>
+                                <td>窗口句柄已被注销或未启动</td>
+                                <td>启动等待保障屏障，确保 Handle 有效</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 6. 文本与按键模拟输入 -->
+            <section id="text-input" class="chapter-section">
+                <h1>文本与按键模拟输入 (WindowsInputSimulator)<a class="anchor-link" href="#text-input">#</a></h1>
+                <p class="doc-p">提供双模式输入机制：前台高保真 Unicode 文本注入与后台定向窗口消息投递。</p>
+
+                <h2>1. 双模式选型对比</h2>
+                <div class="table-responsive">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>特性</th>
+                                <th>前台模式 (SendInput)</th>
+                                <th>后台模式 (PostMessage / SendMessage)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>目标窗口状态</strong></td>
+                                <td>必须获得系统焦点（处于前台）</td>
+                                <td>窗口可处于未激活或被遮挡状态</td>
+                            </tr>
+                            <tr>
+                                <td><strong>输入法影响</strong></td>
+                                <td><span class="badge badge-success">无影响 (KEYEVENTF_UNICODE)</span></td>
+                                <td><span class="badge badge-success">无影响 (WM_CHAR)</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>中文字符支持</strong></td>
+                                <td>直接投递 Unicode 码，完全直通</td>
+                                <td>直接投递 UTF-16 字符字面值</td>
+                            </tr>
+                            <tr>
+                                <td><strong>游戏控件兼容</strong></td>
+                                <td>极高（模拟物理驱动层）</td>
+                                <td>中等（部分 DirectInput 独占游戏不响应 WM_CHAR）</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2>2. 模拟输入代码范例</h2>
+                <div class="code-block-container">
+                    <div class="code-header"><span>WindowsInputSimulator 代码范例</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code>var simulator = new WindowsInputSimulator();
+
+// 1. 前台模式：直接输入中文长文本（每个字符间隔 15ms，防止吞字）
+simulator.SendText("你好，这是来自 GameTools 的自动化测试文本！🎉", delayBetweenCharsMs: 15);
+
+// 2. 前台模式：模拟按下 Ctrl + V 粘贴组合键
+simulator.SendKeyPress(Keys.V, KeyModifiers.Control);
+
+// 3. 后台模式：向非激活目标窗口投递按键与字符
+IntPtr targetHwnd = new IntPtr(0x123456);
+simulator.PostTextToWindow(targetHwnd, "后台自动输入数据\r\n");
+
+// 4. 后台模式：针对标准 Windows Edit/TextBox 快速赋值
+simulator.SetWindowText(targetHwnd, "瞬间填充的全文内容");</code></pre>
+                </div>
+            </section>
+
+            <!-- 7. 钩子与进程消息监听 -->
+            <section id="hooks-monitoring" class="chapter-section">
+                <h1>钩子与进程消息监听系统<a class="anchor-link" href="#hooks-monitoring">#</a></h1>
+                <p class="doc-p">实现无注入跨进程全局按键/鼠标监听，与目标进程级窗口生命周期状态捕获。</p>
+
+                <h2>1. 低级输入钩子 (LowLevelHookManager)</h2>
+                <div class="callout callout-warning">
+                    <strong>⚡ 低级钩子两大约束与架构解法</strong>：
+                    <br>1. <strong>GC 回收委托崩溃</strong>：托管代码的委托若被 GC 回收，底层 C 回调将引发致命的 Access Violation。解法：使用 <code class="inline-code">GCHandle.Alloc(proc, GCHandleType.Normal)</code> 强行固化句柄。
+                    <br>2. <strong>系统超时强行注销</strong>：Windows 对低级钩子设有看门狗（约 200~300ms）。回调函数内严禁阻塞。解法：内部只向 <code class="inline-code">Channel&lt;T&gt;</code> 管道写入事件并立即返回；独立的异步任务进行前台进程比对与外部事件派发。
+                </div>
+
+                <div class="code-block-container">
+                    <div class="code-header"><span>LowLevelHookManager 零阻塞管道设计</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code>private IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+{
+    if (nCode >= 0)
+    {
+        uint msg = (uint)wParam;
+        var kbStruct = Marshal.PtrToStructure&lt;KBDLLHOOKSTRUCT&gt;(lParam);
+
+        // 零阻塞推入无界内存通道
+        _eventChannel.Writer.TryWrite(new RawInputEvent
+        {
+            IsKeyboard = true,
+            Message = msg,
+            VkCode = (int)kbStruct.VkCode,
+            ScanCode = (int)kbStruct.ScanCode
+        });
+    }
+
+    // 毫秒内立即放行下一个钩子
+    return User32.CallNextHookEx(_hKeyboardHook, nCode, wParam, lParam);
+}</code></pre>
+                </div>
+
+                <h2>2. 进程事件监听 (WinEventHookManager)</h2>
+                <p class="doc-p">基于 <code class="inline-code">SetWinEventHook</code>（<code class="inline-code">WINEVENT_OUTOFCONTEXT</code>），可精准绑定指定目标进程 PID，监听窗口的生命周期事件：</p>
+                <ul class="doc-list">
+                    <li><code class="inline-code">EVENT_SYSTEM_FOREGROUND (0x0003)</code>：目标窗口获得前台焦点；</li>
+                    <li><code class="inline-code">EVENT_OBJECT_CREATE (0x8000)</code> / <code class="inline-code">EVENT_OBJECT_DESTROY (0x8001)</code>：窗口创建与销毁；</li>
+                    <li><code class="inline-code">EVENT_OBJECT_SHOW (0x8002)</code> / <code class="inline-code">EVENT_OBJECT_HIDE (0x8003)</code>：窗口显隐切换。</li>
+                </ul>
+            </section>
+
+            <!-- 8. Windows 7 平台适配与补丁 -->
+            <section id="win7-compatibility" class="chapter-section">
+                <h1>Windows 7 平台适配与前置要求<a class="anchor-link" href="#win7-compatibility">#</a></h1>
+                <p class="doc-p">虽然微软官方 .NET 8 默认推荐运行在 Windows 10+，但打全必要更新补丁的 Windows 7 SP1 依然具备完整的系统 API 支撑能力。</p>
+
+                <h2>1. Windows 7 必备补丁清单</h2>
+                <div class="table-responsive">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>依赖项 / 补丁代号</th>
+                                <th>组件全称</th>
+                                <th>必要性说明</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Service Pack 1</strong></td>
+                                <td>Windows 7 SP1 (Build 7601)</td>
+                                <td>必须基线。不支持原始 RTM 版 Windows 7</td>
+                            </tr>
+                            <tr>
+                                <td><strong>VC++ 2015-2022</strong></td>
+                                <td>Visual C++ Redistributable (x64/x86)</td>
+                                <td>提供通用 C 运行时库（<code class="inline-code">api-ms-win-crt-*</code>）</td>
+                            </tr>
+                            <tr>
+                                <td><strong>KB2533623 / KB3063858</strong></td>
+                                <td>Windows 动态库安全加载补丁</td>
+                                <td>提供 <code class="inline-code">SetDefaultDllDirectories</code> 接口支持</td>
+                            </tr>
+                            <tr>
+                                <td><strong>KB4474419 / KB4490628</strong></td>
+                                <td>SHA-2 代码签名支持补丁</td>
+                                <td>保证 .NET 8 驱动与程序集签名通过驱动验证</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h2>2. 运行时版本检测工具类</h2>
+                <p class="doc-p">在代码中直接使用 <code class="inline-code">OSVersionHelper</code> 进行特性探测：</p>
+                <div class="code-block-container">
+                    <div class="code-header"><span>OSVersionHelper 诊断输出</span><button class="copy-btn" onclick="copyCode(this)">复制</button></div>
+                    <pre class="code-pre"><code>// 获取系统友好描述
+string desc = OSVersionHelper.GetOsDescription();
+
+// 判断是否为 Windows 7
+if (OSVersionHelper.IsWindows7)
+{
+    Console.WriteLine("当前运行于 Windows 7 环境，启用稳定版 GDI 与 PrintWindow(0) 回退兼容模式。");
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- 9. 需求规格说明书 -->
+            <section id="requirements" class="chapter-section">
+                <h1>需求规格说明书归档<a class="anchor-link" href="#requirements">#</a></h1>
+                <p class="doc-p">本章节内容与版本控制文档 <a href="GameToolsCore/requirements.md" class="doc-link">Docs/GameToolsCore/requirements.md</a> 保持一致。</p>
+                <div class="callout callout-info">
+                    <strong>基线标识</strong>：REQ-GAMETOOLS-20261008-BASE
+                </div>
+                <h2>功能清单</h2>
+                <ul class="doc-list">
+                    <li><strong>REQ-BG-01</strong>：支持作为无界面后台守护进程常驻运行，支持系统托盘驻留模式。</li>
+                    <li><strong>REQ-BG-02</strong>：具备 Win32 消息泵机制，持续分发 WM_HOTKEY 消息。</li>
+                    <li><strong>REQ-CAP-01</strong>：支持抓取多显示器虚拟桌面与自定义矩形区域。</li>
+                    <li><strong>REQ-CAP-03</strong>：后台窗口截图自动在 Win7 下使用稳定参数，高版本启用 0x02 增强抓取。</li>
+                    <li><strong>REQ-HK-01</strong>：支持注册 Ctrl/Alt/Shift/Win 组合键，具备冲突排查能力。</li>
+                    <li><strong>REQ-INP-01</strong>：前台 SendInput Unicode 模式直通，不受操作系统输入法切换影响。</li>
+                    <li><strong>REQ-HKP-01</strong>：低级钩子防 GC 回收与管道异步化，杜绝超时卸载。</li>
+                </ul>
+            </section>
+
+            <!-- 10. 详细技术方案设计 -->
+            <section id="design" class="chapter-section">
+                <h1>详细技术方案设计归档<a class="anchor-link" href="#design">#</a></h1>
+                <p class="doc-p">本章节内容与版本控制文档 <a href="GameToolsCore/design.md" class="doc-link">Docs/GameToolsCore/design.md</a> 保持一致。</p>
+                <h2>接口与实体契约</h2>
+                <div class="table-responsive">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>接口名称</th>
+                                <th>归属程序集</th>
+                                <th>主要方法 / 事件</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code class="inline-code">IScreenCapture</code></td>
+                                <td>GameTools.Core</td>
+                                <td>CaptureFullScreen, CaptureRegion, CaptureWindow, CaptureWindowAsPng</td>
+                            </tr>
+                            <tr>
+                                <td><code class="inline-code">IHotkeyManager</code></td>
+                                <td>GameTools.Core</td>
+                                <td>RegisterHotkey, UnregisterHotkey, UnregisterAll, HotkeyTriggered</td>
+                            </tr>
+                            <tr>
+                                <td><code class="inline-code">ITextInputSimulator</code></td>
+                                <td>GameTools.Core</td>
+                                <td>SendText, SendKeyPress, PostTextToWindow, SetWindowText</td>
+                            </tr>
+                            <tr>
+                                <td><code class="inline-code">ILowLevelHookManager</code></td>
+                                <td>GameTools.Core</td>
+                                <td>StartKeyboardHook, StopKeyboardHook, KeyDown, KeyUp, MouseEvent</td>
+                            </tr>
+                            <tr>
+                                <td><code class="inline-code">IWinEventHookManager</code></td>
+                                <td>GameTools.Core</td>
+                                <td>Start, Stop, WinEventReceived</td>
+                            </tr>
+                            <tr>
+                                <td><code class="inline-code">IBackgroundMessagePump</code></td>
+                                <td>GameTools.Core</td>
+                                <td>Start, Stop, PostAction, InvokeFunc, RegisterMessageFilter</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 11. 实施计划与里程碑 -->
+            <section id="plan" class="chapter-section">
+                <h1>实施计划与里程碑归档<a class="anchor-link" href="#plan">#</a></h1>
+                <p class="doc-p">本章节内容与版本控制文档 <a href="GameToolsCore/plan.md" class="doc-link">Docs/GameToolsCore/plan.md</a> 保持一致。</p>
+                <div class="grid-cards">
+                    <div class="metric-card success">
+                        <div class="metric-title">里程碑 M1</div>
+                        <div class="metric-val">已完成</div>
+                        <div class="metric-sub">工程基线、分层设计与文档落地</div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-title">里程碑 M2</div>
+                        <div class="metric-val">已完成</div>
+                        <div class="metric-sub">Win32 底层封装、版本探测与消息泵</div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-title">里程碑 M3</div>
+                        <div class="metric-val">已完成</div>
+                        <div class="metric-sub">截图、快捷键与模拟输入实现</div>
+                    </div>
+                    <div class="metric-card success">
+                        <div class="metric-title">里程碑 M4</div>
+                        <div class="metric-val">已完成</div>
+                        <div class="metric-sub">低级钩子、进程事件监听与宿主验证</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 12. 任务清单与验收报告 -->
+            <section id="tasks" class="chapter-section">
+                <h1>任务分解与跟踪清单归档<a class="anchor-link" href="#tasks">#</a></h1>
+                <p class="doc-p">本章节内容与版本控制文档 <a href="GameToolsCore/tasks.md" class="doc-link">Docs/GameToolsCore/tasks.md</a> 保持一致。</p>
+                <div class="table-responsive">
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th>任务编号</th>
+                                <th>任务名称</th>
+                                <th>状态</th>
+                                <th>交付物</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>TASK-01</td><td>编写规范文档</td><td><span class="badge badge-success">已完成</span></td><td>Docs/GameToolsCore/*.md</td></tr>
+                            <tr><td>TASK-02</td><td>建立 .NET 8 分层解决方案</td><td><span class="badge badge-success">已完成</span></td><td>GameTools.slnx 及各子项目</td></tr>
+                            <tr><td>TASK-03</td><td>Win32 原生封装与辅助层</td><td><span class="badge badge-success">已完成</span></td><td>GameTools.Win32</td></tr>
+                            <tr><td>TASK-04</td><td>后台消息泵与单实例互斥</td><td><span class="badge badge-success">已完成</span></td><td>BackgroundMessagePump</td></tr>
+                            <tr><td>TASK-05</td><td>屏幕与窗口截图模块</td><td><span class="badge badge-success">已完成</span></td><td>GdiScreenCapture</td></tr>
+                            <tr><td>TASK-06</td><td>全局快捷键管理器</td><td><span class="badge badge-success">已完成</span></td><td>Win32HotkeyManager</td></tr>
+                            <tr><td>TASK-07</td><td>前后台文本输入模拟</td><td><span class="badge badge-success">已完成</span></td><td>WindowsInputSimulator</td></tr>
+                            <tr><td>TASK-08</td><td>进程消息与输入钩子</td><td><span class="badge badge-success">已完成</span></td><td>LowLevelHookManager</td></tr>
+                            <tr><td>TASK-09</td><td>综合宿主与单元测试</td><td><span class="badge badge-success">已完成</span></td><td>GameTools.App & Tests</td></tr>
+                            <tr><td>TASK-10</td><td>全量编译与验证交付</td><td><span class="badge badge-success">已完成</span></td><td>13 项单元测试 100% 通过</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 13. 实施总结与交付报告 -->
+            <section id="implementation" class="chapter-section">
+                <h1>实施总结与交付报告归档<a class="anchor-link" href="#implementation">#</a></h1>
+                <p class="doc-p">本章节内容与版本控制文档 <a href="GameToolsCore/implementation.md" class="doc-link">Docs/GameToolsCore/implementation.md</a> 保持一致。</p>
+                <h2>核心技术突破与收获</h2>
+                <ol class="doc-list">
+                    <li><strong>彻底解决 Win32 RegisterHotKey 跨线程 1408 报错</strong>：通过在 STA 后台消息泵中内置自定义消息派遣队列，无缝重定向外部线程的热键注册操作。</li>
+                    <li><strong>零阻塞低级系统钩子</strong>：通过 <code class="inline-code">System.Threading.Channels</code> 将操作系统回调与耗时进程匹配逻辑完全解耦，确保系统永不强退钩子。</li>
+                    <li><strong>Windows 7 到 Windows 11 的高韧性兼容降级</strong>：针对 PrintWindow 标志位与 DWM 隐形边框，自适应多代 Windows 系统。</li>
+                </ol>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+function switchTab(sectionId, updateHash) {
+    document.querySelectorAll('.chapter-section').forEach(sec => {
+        sec.classList.remove('active');
+    });
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+
+    const target = document.getElementById(sectionId);
+    const navBtn = document.querySelector(`.nav-item[data-target="${sectionId}"]`);
+
+    if (target) {
+        target.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    if (navBtn) {
+        navBtn.classList.add('active');
+    }
+    if (updateHash !== false) {
+        history.pushState(null, null, '#' + sectionId);
+    }
+}
+
+function copyCode(btn) {
+    const pre = btn.closest('.code-block-container').querySelector('code');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = "已复制!";
+        setTimeout(() => { btn.innerText = orig; }, 1500);
+    });
+}
+
+function filterContent() {
+    const q = document.getElementById('search-input').value.toLowerCase().trim();
+    if (!q) {
+        document.querySelectorAll('.nav-item').forEach(el => el.style.display = 'flex');
+        document.querySelectorAll('.nav-group').forEach(el => el.style.display = 'block');
+        return;
+    }
+    document.querySelectorAll('.nav-group').forEach(group => {
+        let hasVisible = false;
+        group.querySelectorAll('.nav-item').forEach(el => {
+            const text = el.innerText.toLowerCase();
+            const match = text.includes(q);
+            el.style.display = match ? 'flex' : 'none';
+            if (match) hasVisible = true;
+        });
+        group.style.display = hasVisible ? 'block' : 'none';
+    });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    let initialHash = window.location.hash.replace('#', '');
+    if (!initialHash) initialHash = 'home';
+    const found = document.getElementById(initialHash);
+    if (found) {
+        switchTab(initialHash, false);
+    } else {
+        switchTab('home', false);
+    }
+});
+
+window.addEventListener('hashchange', () => {
+    const h = window.location.hash.replace('#', '');
+    if (h && document.getElementById(h)) {
+        switchTab(h, false);
+    }
+});
+    </script>
+</body>
+</html>

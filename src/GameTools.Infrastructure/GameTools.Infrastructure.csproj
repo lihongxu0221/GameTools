@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>GameTools.Infrastructure</RootNamespace>
+    <AssemblyName>GameTools.Infrastructure</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GameTools.Core\GameTools.Core.csproj" />
+    <ProjectReference Include="..\GameTools.Win32\GameTools.Win32.csproj" />
+  </ItemGroup>
+
+</Project>
