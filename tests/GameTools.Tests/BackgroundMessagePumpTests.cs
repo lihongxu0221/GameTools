@@ -1,4 +1,4 @@
-using GameTools.Infrastructure.Host;
+﻿using GameTools.Infrastructure.Host;
 using Xunit;
 
 namespace GameTools.Tests;

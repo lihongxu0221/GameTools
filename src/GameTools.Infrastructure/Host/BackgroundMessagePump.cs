@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Windows.Forms;
 using GameTools.Core.Abstractions;
 using GameTools.Win32.Native;
@@ -68,7 +68,10 @@ public sealed class BackgroundMessagePump : IBackgroundMessagePump
 
     public void PostAction(Action action)
     {
-        ArgumentNullException.ThrowIfNull(action);
+        if (action is null)
+        {
+            throw new ArgumentNullException(nameof(action));
+        }
         if (_window == null || _window.Handle == IntPtr.Zero)
         {
             throw new InvalidOperationException("消息泵尚未启动或窗口句柄无效。");
@@ -80,7 +83,10 @@ public sealed class BackgroundMessagePump : IBackgroundMessagePump
 
     public T InvokeFunc<T>(Func<T> func)
     {
-        ArgumentNullException.ThrowIfNull(func);
+        if (func is null)
+        {
+            throw new ArgumentNullException(nameof(func));
+        }
         if (_window == null || _window.Handle == IntPtr.Zero)
         {
             throw new InvalidOperationException("消息泵尚未启动或窗口句柄无效。");

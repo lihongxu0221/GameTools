@@ -1,4 +1,4 @@
-namespace GameTools.Core.Abstractions;
+﻿namespace GameTools.Core.Abstractions;
 
 /// <summary>
 /// 后台 Win32 消息泵宿主接口

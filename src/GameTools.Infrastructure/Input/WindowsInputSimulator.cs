@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using GameTools.Core.Abstractions;
 using GameTools.Core.Enums;

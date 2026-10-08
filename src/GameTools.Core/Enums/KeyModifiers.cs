@@ -1,4 +1,4 @@
-namespace GameTools.Core.Enums;
+﻿namespace GameTools.Core.Enums;
 
 /// <summary>
 /// 快捷键修饰键枚举（兼容 Win32 MOD_* 定义）

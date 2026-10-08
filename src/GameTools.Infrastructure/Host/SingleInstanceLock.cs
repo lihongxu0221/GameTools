@@ -1,4 +1,4 @@
-namespace GameTools.Infrastructure.Host;
+﻿namespace GameTools.Infrastructure.Host;
 
 /// <summary>
 /// 基于系统级命名互斥体的单实例进程锁

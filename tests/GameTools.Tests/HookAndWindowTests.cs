@@ -1,4 +1,4 @@
-using GameTools.Infrastructure.Hooks;
+﻿using GameTools.Infrastructure.Hooks;
 using GameTools.Win32.Helpers;
 using Xunit;
 

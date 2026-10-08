@@ -1,4 +1,4 @@
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
 using GameTools.Core.Enums;
 using GameTools.Infrastructure.Host;
 using GameTools.Infrastructure.Hotkeys;

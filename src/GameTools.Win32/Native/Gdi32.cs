@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using GameTools.Win32.SafeHandles;
 
 namespace GameTools.Win32.Native;

@@ -1,4 +1,4 @@
-# GameTools 需求规格说明书
+﻿# GameTools 需求规格说明书
 
 ## 1. 业务与运行环境
 - **开发框架**：.NET 8 (`net8.0-windows`)。

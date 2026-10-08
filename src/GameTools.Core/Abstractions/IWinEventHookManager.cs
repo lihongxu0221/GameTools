@@ -1,4 +1,4 @@
-using GameTools.Core.Events;
+﻿using GameTools.Core.Events;
 
 namespace GameTools.Core.Abstractions;
 

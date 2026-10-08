@@ -1,4 +1,4 @@
-<Solution>
+﻿<Solution>
   <Folder Name="/src/">
     <Project Path="src/GameTools.App/GameTools.App.csproj" />
     <Project Path="src/GameTools.Core/GameTools.Core.csproj" />

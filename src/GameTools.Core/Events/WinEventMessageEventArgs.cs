@@ -1,4 +1,4 @@
-namespace GameTools.Core.Events;
+﻿namespace GameTools.Core.Events;
 
 /// <summary>
 /// 目标进程 WinEvent 窗口状态事件参数

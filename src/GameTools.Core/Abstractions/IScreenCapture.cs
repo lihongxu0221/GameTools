@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using GameTools.Core.Models;
 
 namespace GameTools.Core.Abstractions;

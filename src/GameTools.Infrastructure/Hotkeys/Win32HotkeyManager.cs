@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using GameTools.Core.Abstractions;
@@ -147,7 +147,10 @@ public sealed class Win32HotkeyManager : IHotkeyManager
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(Win32HotkeyManager));
+        }
     }
 
     public void Dispose()

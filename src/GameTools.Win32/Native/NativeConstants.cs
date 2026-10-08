@@ -1,4 +1,4 @@
-namespace GameTools.Win32.Native;
+﻿namespace GameTools.Win32.Native;
 
 public static class NativeConstants
 {

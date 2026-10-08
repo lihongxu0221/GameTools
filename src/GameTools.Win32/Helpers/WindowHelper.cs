@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -130,7 +130,7 @@ public static class WindowHelper
     public static IReadOnlyList<WindowInfo> FindWindowsByTitle(string titleKeyword)
     {
         return FindTopLevelWindows()
-            .Where(w => w.Title.Contains(titleKeyword, StringComparison.OrdinalIgnoreCase))
+            .Where(w => w.Title.IndexOf(titleKeyword, StringComparison.OrdinalIgnoreCase) >= 0)
             .ToList();
     }
 }

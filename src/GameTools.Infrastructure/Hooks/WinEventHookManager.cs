@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using GameTools.Core.Abstractions;
@@ -146,7 +146,10 @@ public sealed class WinEventHookManager : IWinEventHookManager
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(WinEventHookManager));
+        }
     }
 
     public void Dispose()

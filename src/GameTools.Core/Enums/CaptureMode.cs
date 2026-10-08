@@ -1,4 +1,4 @@
-namespace GameTools.Core.Enums;
+﻿namespace GameTools.Core.Enums;
 
 /// <summary>
 /// 截图捕获方式

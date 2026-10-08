@@ -1,0 +1,39 @@
+﻿<Project>
+
+  <!--
+    统一构建设置。各 csproj 不再重复声明 TargetFrameworks / LangVersion / Nullable 等属性。
+    框架契约：生产工程多目标 net8.0-windows;net48；契约层 GameTools.Core 在 S6 阶段收敛为 netstandard2.0。
+
+    说明：以下 ItemGroup 使用 $(TargetFramework) 条件。在多目标构建中，props 于外层调度阶段求值时
+    TargetFramework 为空，条件不成立故不引入；内层按 TFM 求值时 net8 不引入、net48 引入，符合预期。
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0-windows;net48</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <NeutralLanguage>zh-Hans</NeutralLanguage>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <!--
+    DPI 感知：net8.0-windows 由 WinForms 托管 API 提供；net48 无对应 API，必须依赖 app.manifest 声明。
+    两者统一为 Per-Monitor v2，确保高 DPI 与混合缩放显示器下窗口矩形与截图物理像素一致。
+  -->
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net8.0-windows' ">
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <!-- net48 缺失的语言特性垫片与手写全局 using；net8 目标由编译器与 ImplicitUsings 提供，不引入本文件。 -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <Compile Include="$(MSBuildThisFileDirectory)build\Net48Shims.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)build\Net48GlobalUsings.cs" />
+    <PackageReference Include="System.Threading.Channels" />
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" />
+  </ItemGroup>
+
+</Project>

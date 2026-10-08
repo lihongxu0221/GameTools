@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
@@ -267,7 +267,10 @@ public sealed class LowLevelHookManager : ILowLevelHookManager
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(LowLevelHookManager));
+        }
     }
 
     public void Dispose()

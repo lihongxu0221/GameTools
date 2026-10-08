@@ -1,4 +1,4 @@
-using GameTools.Infrastructure.Input;
+﻿using GameTools.Infrastructure.Input;
 using Xunit;
 
 namespace GameTools.Tests;

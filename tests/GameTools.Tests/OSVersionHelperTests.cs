@@ -1,4 +1,4 @@
-using GameTools.Win32.Helpers;
+﻿using GameTools.Win32.Helpers;
 using Xunit;
 
 namespace GameTools.Tests;

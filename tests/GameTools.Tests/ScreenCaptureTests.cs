@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using GameTools.Core.Enums;
 using GameTools.Infrastructure.Capture;
 using Xunit;

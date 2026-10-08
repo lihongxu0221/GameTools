@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using GameTools.Core.Enums;
 
 namespace GameTools.Core.Models;
