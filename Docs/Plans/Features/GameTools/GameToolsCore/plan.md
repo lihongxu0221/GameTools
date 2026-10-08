@@ -1,4 +1,4 @@
-﻿# GameTools 核心系统实施计划
+# GameTools 核心系统实施计划
 
 ## 1. 计划概述
 
@@ -18,6 +18,7 @@
   - GDI 资源全面采用安全句柄封装（`SafeGdiObjectHandle` / `SafeGdiDcHandle` / `SafeWindowDcHandle`），保证异常路径下 `DeleteObject` / `DeleteDC` / `ReleaseDC` 必定执行。
   - 全局钩子采用委托强引用加 `GCHandle` 保活，通过有界 `System.Threading.Channels` 异步解耦，杜绝钩子超时卸载与内存无界增长。
   - 依赖版本集中管理（`Directory.Packages.props`），工具链固定（`global.json`）。
+  - **工具链兼容下限**：Visual Studio 2022 17.8 / .NET SDK 8.0.100 / MSBuild 17.8 / NuGet 6.2+；解决方案使用经典 `.sln`（Format Version 12.00）而非 `.slnx`，确保老版本 VS 无需预览特性即可加载。详见 `toolchain-compatibility.md`。
 
 ## 3. 阶段规划（现状与改进路线）
 
@@ -139,6 +140,7 @@
 | 用途 | 位置 |
 | --- | --- |
 | 版本化文档（唯一来源） | `Docs/Plans/Features/GameTools/GameToolsCore/`：`plan.md`、`requirements.md`、`design.md`、`implementation.md`、`tasks.md` |
+| 工具链兼容基线 | `Docs/Plans/Features/GameTools/GameToolsCore/toolchain-compatibility.md` |
 | 用户手册 | `Docs/GameTools_用户使用手册.html` |
 | 分析报告、验证日志、构建与测试产物 | `Outputs/Features/GameTools/功能点名_时间戳/`；缺陷类产物用 `Outputs/Fixes/GameTools/`，跨项目用 `Outputs/Fixes/CrossProjects/`（均在 `.gitignore` 中，禁止提交） |
 
@@ -158,4 +160,5 @@
 | 时间 | 变更摘要 |
 | --- | --- |
 | 2026-10-08 17:40:00 +08:00 | 依据两份复核报告重写计划：技术前提由「.NET 8 与 Win7」修正为多目标 `net8.0-windows;net48`；补齐范围与非目标、受影响模块、兼容风险、可度量验收标准、验证方案、回退方案、文档与输出目录、分支与基线记录等强制章节；阶段状态表对齐实现现状并指向 S0–S7 改进路线。 |
+| 2026-10-08 18:40:00 +08:00 | 补充工具链兼容基线：解决方案由 `.slnx` 改为经典 `GameTools.sln`（兼容 VS 2022 17.8 之前的版本），`global.json` 基线放宽为 8.0.100 + rollForward latestMajor，新增 `toolchain-compatibility.md` 记录最低版本、约束来源与新特性引入检查清单。 |
 | 2026-10-08 17:50:00 +08:00 | 按仓库文档目录规范迁移本专题：五段式文档由 `Docs/GameToolsCore/` 迁至 `Docs/Plans/Features/GameTools/GameToolsCore/`（单项目专属功能特性），同步更新第 8 节与第 10 节的文档及产物路径表述。 || 2026-10-08 15:58:00 +08:00 | 创建计划文档，明确 .NET 8 与 Win7+ 平台架构目标与分阶段计划。 |

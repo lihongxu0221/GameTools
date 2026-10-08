@@ -1,4 +1,4 @@
-﻿# GameTools 任务分解与执行清单
+# GameTools 任务分解与执行清单
 
 ## 1. 初始任务看板（阶段一至阶段八）
 
@@ -21,12 +21,15 @@
 
 - [x] **TASK-11.1**：新增 `Directory.Build.props`（统一 `TargetFrameworks=net8.0-windows;net48`、LangVersion、Nullable、版本号）。
 - [x] **TASK-11.2**：新增 `Directory.Packages.props` 集中管理包版本，移除各 csproj 内散落版本。
-- [x] **TASK-11.3**：新增 `global.json` 固定 SDK 版本（`.slnx` 需 9.0.200 以上）。
+- [x] **TASK-11.3**：新增 `global.json` 固定 SDK 基线为 8.0.100（`rollForward: latestMajor`），保证 VS 2022 17.8 内置 SDK 可构建且允许使用更高版本。
 - [x] **TASK-11.4**：新增 `.editorconfig`（`charset = utf-8-bom`、命名与诊断规则），并将现有源文件统一为 UTF-8 BOM。
 - [x] **TASK-11.5**：新增 net48 语言垫片（`IsExternalInit`、`RequiredMemberAttribute`、`CompilerFeatureRequiredAttribute`、`SetsRequiredMembersAttribute`）与手写 `GlobalUsings.cs`。
 - [x] **TASK-11.6**：替换 6 处 net48 缺失 BCL 调用（`ObjectDisposedException.ThrowIf` x3、`ArgumentNullException.ThrowIfNull` x2、`string.Contains` 双参重载 x1）。
 - [x] **TASK-11.7**：引入 `System.Threading.Channels` 与 `System.Runtime.InteropServices.RuntimeInformation` 包。
 - [x] **TASK-11.8**：验证双目标构建 0 警告 0 错误且既有测试双目标通过。
+- [x] **TASK-11.9**：解决方案改为经典 `GameTools.sln`（移除 `.slnx`），修正项目类型 GUID 与 tests 解决方案文件夹嵌套。
+- [x] **TASK-11.10**：新增 `toolchain-compatibility.md`，记录 VS/SDK/MSBuild/NuGet 最低版本矩阵与新特性引入检查清单。
+- [x] **TASK-11.11**：用 SDK 8.0.420 与 10.0.401 双版本验证经典 .sln 的构建与双目标测试。
 
 ### S1 平台一致性（TASK-12）
 
@@ -92,6 +95,7 @@
 
 | 时间 | 变更摘要 |
 | --- | --- |
+| 2026-10-08 18:40:00 +08:00 | 补充 TASK-11.9 至 11.11：解决方案改为经典 `GameTools.sln` 以兼容 VS 2022 17.8 之前版本，`global.json` 基线放宽至 SDK 8.0.100 + latestMajor，新增 `toolchain-compatibility.md`；SDK 8.0.420 与 10.0.401 双版本构建 0 警告 0 错误、双目标各 13 项测试通过。 |
 | 2026-10-08 18:15:00 +08:00 | S0 完成（TASK-11.1 至 11.8 全部勾选）：新增 Directory.Build.props、Directory.Packages.props、global.json、.editorconfig、build 目录 net48 垫片与全局 using、App manifest；5 个 csproj 去除重复属性并接入中央包管理；替换 6 处 net48 缺失 BCL 调用；52 个文本文件统一 UTF-8 BOM。双目标构建 0 警告 0 错误，13 项测试在 net8.0-windows 与 net48 下均通过。验证记录见 `Outputs/Features/GameTools/S0-工程治理与多目标_20261008-181500/`。 || 2026-10-08 17:45:00 +08:00 | 依据两份复核报告重排任务：撤回 TASK-10 的全功能验证完成勾选（复核确认验证覆盖不足），新增 S0–S7 改进任务看板（TASK-11 至 TASK-18，覆盖工程治理与多目标、平台一致性、钩子宿主线程、稳定性与退出、功能缺口、验证体系、Core 去平台依赖、文档同步）。 |
 | 2026-10-08 16:35:00 +08:00 | 各阶段功能已实现，新增 13 个单元测试，编译构建全流程完成。 |
 | 2026-10-08 15:58:00 +08:00 | 创建任务分解看板。 |

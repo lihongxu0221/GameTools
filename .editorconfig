@@ -1,5 +1,13 @@
 ﻿root = true
 
+# ==========================================================================
+# 兼容下限
+#   Visual Studio 2022 17.8（内置 .NET SDK 8.0.1xx/8.0.2xx）
+#   解决方案使用经典 .sln 格式（Format Version 12.00），不使用 .slnx
+#   依赖版本使用 Directory.Packages.props（中央包管理，需 VS 17.2+/NuGet 6.2+）
+# 因此：不得引入仅 VS 17.13+ / SDK 9.0.200+ 才支持的语法或 MSBuild 属性。
+# ==========================================================================
+
 [*]
 charset = utf-8-bom
 end_of_line = crlf
@@ -8,8 +16,13 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 
-[*.{json,yml,yaml,xml,csproj,props,targets,slnx,config}]
+[*.{json,yml,yaml,xml,csproj,props,targets,config}]
 indent_size = 2
+
+# .sln 为 VS 生成的经典格式，缩进与行尾由工具维护，不做格式约束
+[*.sln]
+indent_style = tab
+trim_trailing_whitespace = false
 
 [*.{cmd,bat,ps1}]
 end_of_line = crlf

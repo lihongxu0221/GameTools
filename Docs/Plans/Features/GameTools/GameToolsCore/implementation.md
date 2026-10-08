@@ -5,6 +5,7 @@
 - **旧系统交付形态**：`net48` 目标面向 Windows 7 SP1 / 8 / 8.1，走自包含部署（不支持单文件发布与 ReadyToRun），需前置 VC++ 2015-2022 运行库。
 - **系统支持**：Windows 7 SP1+ (Windows 7 / 8 / 8.1 / 10 / 11)。
 - **语言标准**：C# 12，启用 Nullable 检查。
+- **工具链兼容下限**：Visual Studio 2022 17.8 / .NET SDK 8.0.100 / MSBuild 17.8 / NuGet 6.2+；解决方案为经典 `GameTools.sln`（不使用 `.slnx`）。
 
 ## 2. 关键设计实现要点
 1. **Windows 7 兼容机制**：
@@ -31,6 +32,7 @@
 
 | 验证项 | 结果 |
 | --- | --- |
+| 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 |
 | 双目标构建 dotnet build GameTools.slnx | 成功，5 个工程，0 警告 0 错误，4.83s |
 | net8.0-windows 测试 | 13 通过 / 0 失败 / 0 跳过 |
 | net48 测试 | 13 通过 / 0 失败 / 0 跳过 |
@@ -45,8 +47,35 @@
 5. DPI 感知按 TFM 分离：net8.0-windows 由 ApplicationHighDpiMode=PerMonitorV2 提供（WinForms 分析器 WFAC010 禁止在 manifest 中配置 DPI），net48 需依赖 manifest 声明，该部分留待 S1 按条件引入。首轮构建的 2 条 WFAC010 警告由此消除。
 
 未验证项：Windows 7 SP1 / 8 / 8.1 真机运行、Win7 自包含交付形态、跨目标 PNG/BGRA 字节一致性。旧系统兼容性结论基于官方支持矩阵与特性探测设计，不构成实机验证结论。
+
+### S0 补充：工具链向后兼容改造（2026-10-08 18:40）
+
+| 项 | 变更前 | 变更后 |
+| --- | --- |
+| 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 | --- |
+| 解决方案 | GameTools.slnx（XML 格式） | GameTools.sln（经典 Format Version 12.00），含 src 与 tests 两个解决方案文件夹 |
+| global.json | version 10.0.401，rollForward latestFeature | version 8.0.100，rollForward latestMajor，allowPrerelease false |
+
+改造原因：`.slnx` 仅 VS 2022 17.13+ / SDK 9.0.200+ 原生支持；原 `global.json` 锁定 10.0.401 会使 VS 17.8 内置的 SDK 8.0.x 直接构建失败。放宽后 `latestMajor` 允许任意更高版本 SDK，老版本 VS 可正常构建，且新 SDK 仍可使用。
+
+新增 `toolchain-compatibility.md` 记录最低版本矩阵、约束来源与「新特性引入前检查清单」。
+
+验证（同一份源码与工程配置，仅 SDK 不同）：
+
+| SDK | 解决方案 | 构建 | net8.0-windows | net48 |
+| --- | --- |
+| 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 | --- | --- | --- |
+| 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 |
+| 8.0.420 | GameTools.sln | 0 警告 0 错误 | 13 通过 | 13 通过 |
+| 10.0.401 | GameTools.sln | 0 警告 0 错误 | 13 通过 | 13 通过 |
+
+顺带修正 `GameTools.sln` 两处 CLI 生成缺陷：C# 项目类型 GUID 由旧的 `FAE04EC0` 改为 SDK-style 正确的 `9A19103F`；Tests 项目由误置于 src 文件夹改为 tests 文件夹。
+
+未验证：VS 2022 17.8 图形界面加载与调试体验（本机无该版本 VS），以 SDK 8.0.420 命令行等价验证。
+
 ## 变更记录
 | 时间 | 变更摘要 |
 | --- | --- |
+| 2026-10-08 18:40:00 +08:00 | 记录工具链向后兼容改造：解决方案改为经典 .sln、global.json 基线放宽至 SDK 8.0.100 + latestMajor、新增 toolchain-compatibility.md；SDK 8.0.420 与 10.0.401 双版本构建与双目标测试均通过。 |
 | 2026-10-08 16:35:00 +08:00 | 记录 RegisterHotKey 跨线程 1408 解决机制与全功能验证成果。 |
 | 2026-10-08 15:58:00 +08:00 | 创建实现记录文档。 |
