@@ -251,47 +251,75 @@ public sealed class UiElementClicker : IElementClicker
             return false;
         }
 
-        // 元素矩形为屏幕坐标，需换算为窗口客户区坐标
-        POINT screenPoint = new(
-            element.Bounds.X + (element.Bounds.Width / 2),
-            element.Bounds.Y + (element.Bounds.Height / 2));
+        // 元素矩形为屏幕坐标，取中心点作为落点
+        int screenX = element.Bounds.X + (element.Bounds.Width / 2);
+        int screenY = element.Bounds.Y + (element.Bounds.Height / 2);
 
-        POINT clientPoint = screenPoint;
-        if (!User32.ScreenToClient(rootWindowHandle, ref clientPoint))
-        {
-            failure = "屏幕坐标到客户区坐标换算失败。";
-            return false;
-        }
-
-        IntPtr lParam = PackPoint(clientPoint);
-
-        try
-        {
-            // 先移动：悬停后才显示的控件需要先收到移动消息
-            User32.PostMessage(rootWindowHandle, NativeConstants.WM_MOUSEMOVE, IntPtr.Zero, lParam);
-            Thread.Sleep(HoverDelayMs);
-
-            // 按下时 wParam 须带 MK_LBUTTON
-            User32.PostMessage(rootWindowHandle, NativeConstants.WM_LBUTTONDOWN, new IntPtr(1), lParam);
-            Thread.Sleep(PressDelayMs);
-
-            User32.PostMessage(rootWindowHandle, NativeConstants.WM_LBUTTONUP, IntPtr.Zero, lParam);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            failure = $"{ex.GetType().Name}: {ex.Message}";
-            return false;
-        }
+        // 统一交给 BackgroundMouseSimulator：那里集中处理屏幕到客户区的坐标换算、
+        // PostMessage 返回值检查，以及点击前后的鼠标捕获清理。
+        // 本类不再自行拼装消息，避免两条路径的判定标准出现分歧。
+        return BackgroundMouseSimulator.TryClick(
+            rootWindowHandle, screenX, screenY, MouseDispatchStrategy.MessageOnly, out _, out failure);
     }
 
-    /// <summary>
-    /// 按 Win32 约定把客户区坐标打包进 <c>lParam</c>：低字为 X，高字为 Y。
-    /// </summary>
-    /// <param name="point">客户区坐标。</param>
-    /// <returns>打包后的消息参数。</returns>
-    private static IntPtr PackPoint(POINT point) =>
-        new((point.Y << 16) | (point.X & 0xFFFF));
+    /// <inheritdoc />
+    public Task<ClickOutcome> ClickScreenPointAsync(
+        int screenX,
+        int screenY,
+        MouseDispatchStrategy strategy = MouseDispatchStrategy.MessageOnly,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.Run(
+            () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var stopwatch = Stopwatch.StartNew();
+
+                // 以光标所在窗口为目标：屏幕坐标点击本就与具体窗口无关
+                IntPtr target = User32.WindowFromPoint(new POINT(screenX, screenY));
+
+                if (target == IntPtr.Zero)
+                {
+                    return new ClickOutcome
+                    {
+                        Success = false,
+                        Message = $"屏幕坐标 ({screenX},{screenY}) 处没有窗口。",
+                        Elapsed = stopwatch.Elapsed
+                    };
+                }
+
+                IntPtr root = User32.GetAncestor(target, NativeConstants.GA_ROOT);
+                IntPtr rootWindow = root == IntPtr.Zero ? target : root;
+
+                if (!BackgroundMouseSimulator.TryClick(
+                        rootWindow, screenX, screenY, strategy, out bool cursorMoved, out string? failure))
+                {
+                    return new ClickOutcome
+                    {
+                        Success = false,
+                        Message = failure ?? "点击投递失败。",
+                        DispatchStrategy = strategy,
+                        Elapsed = stopwatch.Elapsed
+                    };
+                }
+
+                string hint = cursorMoved
+                    ? "本次点击临时移动了鼠标指针并已还原，期间实体鼠标被短暂占用。"
+                    : "本次点击未移动鼠标指针，实体鼠标未受影响。";
+
+                return new ClickOutcome
+                {
+                    Success = true,
+                    Mechanism = ClickMechanism.UiCoordinateClick,
+                    Message = $"已向 ({screenX},{screenY}) 投递左键点击。{hint}",
+                    DispatchStrategy = strategy,
+                    CursorWasMoved = cursorMoved,
+                    Elapsed = stopwatch.Elapsed
+                };
+            },
+            cancellationToken);
+    }
 
     /// <summary>
     /// 构造 UIPI 风险提示。

@@ -139,6 +139,21 @@ public sealed record ClickOutcome
 
     /// <summary>识图定位时实际采用的捕获源。</summary>
     public CaptureSourceKind CaptureSource { get; init; } = CaptureSourceKind.Unknown;
+
+    /// <summary>
+    /// 实际采用的鼠标投递方式。
+    /// </summary>
+    public MouseDispatchStrategy DispatchStrategy { get; init; } = MouseDispatchStrategy.MessageOnly;
+
+    /// <summary>
+    /// 物理光标是否被移动过。
+    /// </summary>
+    /// <remarks>
+    /// 仅 <see cref="MouseDispatchStrategy.MoveAndRestore"/> 会置为真。
+    /// 用于如实告知用户「实体鼠标在本次操作期间被短暂占用」，
+    /// 而不是在未告知的情况下改变其光标位置。
+    /// </remarks>
+    public bool CursorWasMoved { get; init; }
 }
 
 /// <summary>

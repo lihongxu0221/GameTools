@@ -1,6 +1,42 @@
 ﻿namespace GameTools.Core.Enums;
 
 /// <summary>
+/// 后台模拟鼠标的投递方式。
+/// </summary>
+/// <remarks>
+/// 两者的取舍就是「是否允许影响实体鼠标」：
+/// <list type="bullet">
+/// <item>
+/// <see cref="MessageOnly"/> 完全不碰物理光标，但光标不会真的移到目标上，
+/// 依赖悬停才触发的交互（悬停菜单、拖拽、跟随鼠标的提示框）可能不响应。
+/// </item>
+/// <item>
+/// <see cref="MoveAndRestore"/> 临时把光标移到目标使其悬停生效，点击后立即还原。
+/// 能覆盖上述场景，但点击期间实体鼠标会短暂离开当前位置——无法避免，
+/// 因为让悬停态生效就必须真正移动光标。
+/// </item>
+/// </list>
+/// </remarks>
+public enum MouseDispatchStrategy
+{
+    /// <summary>
+    /// 仅投递鼠标消息，绝不移动物理光标。
+    /// </summary>
+    /// <remarks>
+    /// 默认选择。只要目标不依赖悬停态就应使用此项，实体鼠标完全不受影响。
+    /// </remarks>
+    MessageOnly = 0,
+
+    /// <summary>
+    /// 临时移动物理光标到目标位置，点击后立即还原。
+    /// </summary>
+    /// <remarks>
+    /// 会短暂占用实体鼠标。仅在纯消息投递无法触发目标时作为兜底。
+    /// </remarks>
+    MoveAndRestore = 1
+}
+
+/// <summary>
 /// 控件文本写入最终采用的机制。
 /// </summary>
 /// <remarks>

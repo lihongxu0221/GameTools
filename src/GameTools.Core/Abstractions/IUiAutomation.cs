@@ -61,6 +61,23 @@ public interface IElementClicker
         TemplateDescriptor? template = null,
         MatchOptions? matchOptions = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 在指定屏幕坐标模拟左键点击。
+    /// </summary>
+    /// <param name="screenX">屏幕横坐标。</param>
+    /// <param name="screenY">屏幕纵坐标。</param>
+    /// <param name="strategy">
+    /// 投递方式。默认 <see cref="MouseDispatchStrategy.MessageOnly"/>，
+    /// 该方式保证完全不移动物理光标，实体鼠标不受影响。
+    /// </param>
+    /// <param name="cancellationToken">取消令牌。</param>
+    /// <returns>点击结果。</returns>
+    Task<ClickOutcome> ClickScreenPointAsync(
+        int screenX,
+        int screenY,
+        MouseDispatchStrategy strategy = MouseDispatchStrategy.MessageOnly,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>

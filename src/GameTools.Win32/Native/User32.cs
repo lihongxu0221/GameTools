@@ -115,6 +115,56 @@ public static class User32
     [DllImport(LibraryName, SetLastError = true)]
     public static extern IntPtr WindowFromPoint(POINT point);
 
+    // 鼠标状态 APIs
+
+    /// <summary>
+    /// 读取当前鼠标光标在屏幕上的位置。
+    /// </summary>
+    /// <remarks>
+    /// 用于校验后台操作是否真的没有影响实体鼠标：消息投递路径不应改变该值。
+    /// </remarks>
+    /// <param name="point">输出光标位置。</param>
+    /// <returns>是否读取成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetCursorPos(out POINT point);
+
+    /// <summary>
+    /// 移动鼠标光标到指定屏幕位置。
+    /// </summary>
+    /// <remarks>
+    /// 会真实改变实体鼠标的位置，进而影响用户正在操作的窗口。
+    /// 仅在明确需要光标实际就位的场景使用，且必须成对还原。
+    /// </remarks>
+    /// <param name="x">目标屏幕横坐标。</param>
+    /// <param name="y">目标屏幕纵坐标。</param>
+    /// <returns>是否移动成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetCursorPos(int x, int y);
+
+    /// <summary>
+    /// 返回当前捕获鼠标消息的窗口句柄。
+    /// </summary>
+    /// <remarks>
+    /// 目标程序收到鼠标按下消息后可能调用 <c>SetCapture</c> 把自己设为捕获者。
+    /// 若不处理，实体鼠标会被困在该窗口：光标移出后点击仍被其接收。
+    /// </remarks>
+    /// <returns>捕获窗口句柄；无捕获时返回 <see cref="IntPtr.Zero"/>。</returns>
+    [DllImport(LibraryName)]
+    public static extern IntPtr GetCapture();
+
+    /// <summary>
+    /// 释放当前线程的鼠标捕获。
+    /// </summary>
+    /// <remarks>
+    /// 只有捕获该鼠标的线程才能释放。仅当目标程序因我们的点击而取得捕获时调用。
+    /// </remarks>
+    /// <returns>是否释放成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ReleaseCapture();
+
     /// <summary>
     /// 在两个窗口坐标系之间转换点。
     /// </summary>
