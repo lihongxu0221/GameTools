@@ -34,7 +34,6 @@ public sealed class UiaElementLocator : IUiElementLocator
     /// </summary>
     private const int FallbackTimeoutMs = 10000;
 
-    /// <inheritdoc />
     public async Task<UiQueryResult> FindAsync(UiQuery query, CancellationToken cancellationToken = default)
     {
         if (query == null)
@@ -59,20 +58,36 @@ public sealed class UiaElementLocator : IUiElementLocator
 
         Task<UiQueryResult> work = Task.Run(() => FindCore(query, linked.Token), linked.Token);
 
+        // 必须用 WhenAny 真正放弃等待，而不是 await work。
+        // UI Automation 的 COM 调用可能自身阻塞（目标无响应，或在缺少消息泵的
+        // STA 线程上发生死锁），此时取消令牌无法被观测到，若直接 await 会一直阻塞，
+        // 超时形同虚设并冻结界面。放弃后后台任务可能仍在运行，因此每次查询都使用
+        // 独立的取消源与局部状态，不会影响后续查询。
+        Task finished = await Task.WhenAny(work, Task.Delay(timeoutMs, CancellationToken.None))
+            .ConfigureAwait(false);
+
+        if (finished != work)
+        {
+            return new UiQueryResult
+            {
+                Success = false,
+                Message = cancellationToken.IsCancellationRequested
+                    ? "查询已被取消。"
+                    : $"查询超过 {timeoutMs}ms 未完成，已放弃等待。" +
+                      "目标应用可能无响应；若元素树本就稀疏，也可能是窗口尚未获得焦点。"
+            };
+        }
+
         try
         {
             return await work.ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
-            bool callerCancelled = cancellationToken.IsCancellationRequested;
             return new UiQueryResult
             {
                 Success = false,
-                Message = callerCancelled
-                    ? "查询已被取消。"
-                    : $"查询超过 {timeoutMs}ms 未完成，已放弃等待。" +
-                      "目标应用可能无响应；若元素树本就稀疏，也可能是窗口尚未获得焦点。"
+                Message = "查询已被取消。"
             };
         }
         catch (Exception ex)

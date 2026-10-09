@@ -25,6 +25,11 @@ public sealed class IntegrityLevelProbe : IIntegrityLevelProbe
     private const int TokenIntegrityLevel = 25;
 
     /// <summary>
+    /// <c>PROCESS_QUERY_LIMITED_INFORMATION</c>，读取完整性级别所需的最小查询权限。
+    /// </summary>
+    private const int ProcessQueryLimitedInformation = 0x1000;
+
+    /// <summary>
     /// SID 结构中各字段的字节偏移。
     /// </summary>
     /// <remarks>
@@ -38,10 +43,18 @@ public sealed class IntegrityLevelProbe : IIntegrityLevelProbe
     {
         IntPtr token = IntPtr.Zero;
         IntPtr tokenInformation = IntPtr.Zero;
+        bool ownsProcessHandle = false;
+        IntPtr processHandle = IntPtr.Zero;
 
         try
         {
-            if (!OpenProcessToken(GetProcessHandle(processId), TokenQuery, out token) || token == IntPtr.Zero)
+            processHandle = OpenTargetProcess(processId, out ownsProcessHandle);
+            if (processHandle == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            if (!OpenProcessToken(processHandle, TokenQuery, out token) || token == IntPtr.Zero)
             {
                 return null;
             }
@@ -82,6 +95,11 @@ public sealed class IntegrityLevelProbe : IIntegrityLevelProbe
             {
                 CloseHandle(token);
             }
+
+            if (ownsProcessHandle)
+            {
+                CloseHandle(processHandle);
+            }
         }
     }
 
@@ -107,22 +125,37 @@ public sealed class IntegrityLevelProbe : IIntegrityLevelProbe
                "请以管理员身份重新运行本工具后再试。";
     }
 
-    private static IntPtr GetProcessHandle(int processId)
+    /// <summary>
+    /// 打开目标进程句柄。
+    /// </summary>
+    /// <remarks>
+    /// 不能使用 <see cref="Process"/> 对象取句柄：<c>Process.Handle</c> 返回的是
+    /// 该对象所拥有的句柄，一旦 <c>Process</c> 被释放（无论显式 <c>Dispose</c> 还是
+    /// 离开作用域），句柄随之关闭，后续 <c>OpenProcessToken</c> 拿到的是无效句柄，
+    /// 探测会静默返回 null。此处改为自行打开并显式关闭。
+    /// </remarks>
+    /// <param name="processId">进程 ID；为 0 表示当前进程。</param>
+    /// <param name="ownsHandle">
+    /// 输出调用方是否需要关闭该句柄。当前进程使用伪句柄，不可关闭。
+    /// </param>
+    /// <returns>进程句柄；打开失败时返回 <see cref="IntPtr.Zero"/>。</returns>
+    private static IntPtr OpenTargetProcess(int processId, out bool ownsHandle)
     {
+        ownsHandle = false;
+
         if (processId == 0)
         {
+            // 伪句柄，由系统提供且始终有效，不应也不能关闭
             return GetCurrentProcess();
         }
 
-        try
+        IntPtr handle = OpenProcess(ProcessQueryLimitedInformation, false, (uint)processId);
+        if (handle != IntPtr.Zero)
         {
-            using Process? process = Process.GetProcessById(processId);
-            return process.Handle;
+            ownsHandle = true;
         }
-        catch (Exception)
-        {
-            return IntPtr.Zero;
-        }
+
+        return handle;
     }
 
     /// <summary>
@@ -177,6 +210,12 @@ public sealed class IntegrityLevelProbe : IIntegrityLevelProbe
 
     [DllImport("kernel32.dll")]
     private static extern IntPtr GetCurrentProcess();
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(
+        int desiredAccess,
+        [MarshalAs(UnmanagedType.Bool)] bool inheritHandle,
+        uint processId);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

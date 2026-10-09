@@ -120,10 +120,7 @@ public class UiaElementLocatorTests
             Application.DoEvents();
 
             var locator = new UiaElementLocator();
-            UiQueryResult result = locator
-                .FindAsync(new UiQuery { RootWindowHandle = form.Handle, ControlTypes = new[] { "Button" } })
-                .GetAwaiter()
-                .GetResult();
+            UiQueryResult result = StaWait.PumpUntil(locator.FindAsync(new UiQuery { TimeoutMs = 20000, RootWindowHandle = form.Handle, ControlTypes = new[] { "Button" } }));
 
             Assert.True(result.Success, result.Message);
             Assert.NotEmpty(result.Elements);
@@ -164,15 +161,11 @@ public class UiaElementLocatorTests
             Application.DoEvents();
 
             var locator = new UiaElementLocator();
-            UiQueryResult result = locator
-                .FindAsync(new UiQuery
-                {
+            UiQueryResult result = StaWait.PumpUntil(locator.FindAsync(new UiQuery { TimeoutMs = 20000,
                     RootWindowHandle = form.Handle,
                     ControlTypes = new[] { "Button" },
                     NameContains = "保存"
-                })
-                .GetAwaiter()
-                .GetResult();
+                }));
 
             Assert.True(result.Success, result.Message);
             Assert.NotEmpty(result.Elements);

@@ -41,8 +41,18 @@ public enum ClickMechanism
     /// <summary>向传统 <c>Button</c> 控件发送 <c>BM_CLICK</c>。</summary>
     LegacyButtonClick = 3,
 
+    /// <summary>
+    /// 按元素矩形中心点投递鼠标消息点击。
+    /// </summary>
+    /// <remarks>
+    /// Chromium 只对真正的 button 元素暴露 InvokePattern，自绘的 div 按钮不暴露
+    /// 且句柄为 0，既无法调用模式也无法直接投递消息。实测此类元素可通过
+    /// 「向根窗口投递矩形中心点的鼠标消息」有效触发：目标应用自行做命中测试。
+    /// </remarks>
+    UiCoordinateClick = 4,
+
     /// <summary>特征识图定位后向目标句柄投递鼠标消息。</summary>
-    TemplateMatchClick = 4
+    TemplateMatchClick = 5
 }
 
 /// <summary>

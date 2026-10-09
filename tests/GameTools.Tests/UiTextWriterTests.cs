@@ -73,16 +73,13 @@ public class UiTextWriterTests
             Thread.Sleep(150);
             Application.DoEvents();
 
-            TextEntryOutcome outcome = writer
-                .WriteAsync(
+            TextEntryOutcome outcome = StaWait.PumpUntil(writer.WriteAsync(
                     new UiQuery
                     {
                         RootWindowHandle = form.Handle,
                         NameExact = "绝对不存在的控件名-ZZZ"
                     },
-                    "文本")
-                .GetAwaiter()
-                .GetResult();
+                    "文本"));
 
             Assert.False(outcome.Success);
             Assert.DoesNotContain("没有暴露任何可自动化元素", outcome.Message);
@@ -119,10 +116,7 @@ public class UiTextWriterTests
             Thread.Sleep(150);
             Application.DoEvents();
 
-            TextEntryOutcome outcome = writer
-                .WriteAsync(new UiQuery { RootWindowHandle = form.Handle, ControlTypes = new[] { "Edit" } }, string.Empty)
-                .GetAwaiter()
-                .GetResult();
+            TextEntryOutcome outcome = StaWait.PumpUntil(writer.WriteAsync(new UiQuery { TimeoutMs = 20000, RootWindowHandle = form.Handle, ControlTypes = new[] { "Edit" } }, string.Empty));
 
             Assert.NotEqual(TextEntryMechanism.UiaCharSequence, outcome.Mechanism);
             Assert.False(
@@ -159,10 +153,7 @@ public class UiTextWriterTests
             Application.DoEvents();
 
             const string payload = "S16-回归测试文本";
-            TextEntryOutcome outcome = writer
-                .WriteAsync(new UiQuery { RootWindowHandle = form.Handle, ControlTypes = new[] { "Edit" } }, payload)
-                .GetAwaiter()
-                .GetResult();
+            TextEntryOutcome outcome = StaWait.PumpUntil(writer.WriteAsync(new UiQuery { TimeoutMs = 20000, RootWindowHandle = form.Handle, ControlTypes = new[] { "Edit" } }, payload));
 
             Assert.True(outcome.Success, outcome.Message);
             Assert.Equal(TextEntryMechanism.UiaValuePattern, outcome.Mechanism);
