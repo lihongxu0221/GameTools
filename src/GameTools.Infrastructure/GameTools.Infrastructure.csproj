@@ -33,4 +33,12 @@
     <Reference Include="UIAutomationTypes" />
   </ItemGroup>
 
+  <!--
+    说明：UI Automation 的 BoundingRectangleProperty 返回 System.Windows.Rect，
+    该类型位于 WindowsBase。直接访问会迫使本 WinForms 工程引用 WPF 基础程序集，
+    并在 net8.0-windows 与 net48 之间产生 MSB3243 引用解析冲突。
+    UiaElementLocator 因此改用 GetCurrentPropertyValue 取回 object，
+    再从其运行时类型上按属性读取坐标，故本工程无需引用 WindowsBase。
+  -->
+
 </Project>
