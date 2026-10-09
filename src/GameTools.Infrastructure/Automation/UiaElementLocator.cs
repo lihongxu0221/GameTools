@@ -134,9 +134,20 @@ public sealed class UiaElementLocator : IUiElementLocator
             Success = true,
             Elements = found,
             TotalScanned = scanned,
+            HasServerSideFilter = HasServerSideFilter(query),
             Message = message
         };
     }
+
+    /// <summary>
+    /// 判断本次查询是否在服务端施加了名称或自动化标识过滤。
+    /// </summary>
+    /// <remarks>
+    /// 施加服务端条件时，<c>TotalScanned</c> 只统计通过条件的候选，
+    /// 为 0 并不代表窗口没有可自动化元素，因此空结果提示需要区别对待。
+    /// </remarks>
+    private static bool HasServerSideFilter(UiQuery query) =>
+        !string.IsNullOrWhiteSpace(query.NameExact) || !string.IsNullOrWhiteSpace(query.AutomationId);
 
     /// <summary>
     /// 构造可在服务端执行的 UI Automation 条件。
@@ -257,6 +268,13 @@ public sealed class UiaElementLocator : IUiElementLocator
     /// </remarks>
     private static string BuildEmptyMessage(UiQuery query, int scanned)
     {
+        // 服务端已按名称或自动化标识过滤：命中 0 只说明条件不匹配，
+        // 不能据此断言窗口没有可自动化元素。
+        if (HasServerSideFilter(query))
+        {
+            return "没有元素匹配指定的名称或自动化标识，请确认条件拼写是否正确。";
+        }
+
         if (scanned == 0)
         {
             return "目标窗口没有暴露任何可自动化元素。" +

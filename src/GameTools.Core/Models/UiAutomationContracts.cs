@@ -80,6 +80,15 @@ public sealed record UiQueryResult
     /// <summary>遍历到的元素总数，用于判断无障碍树是否已就绪。</summary>
     public int TotalScanned { get; init; }
 
+    /// <summary>
+    /// 本次查询是否在服务端施加了名称或自动化标识过滤。
+    /// </summary>
+    /// <remarks>
+    /// 为 <c>true</c> 时 <see cref="TotalScanned"/> 只统计通过条件的候选，
+    /// 因此 0 不代表窗口没有可自动化元素。
+    /// </remarks>
+    public bool HasServerSideFilter { get; init; }
+
     /// <summary>失败或降级原因。</summary>
     public string Message { get; init; } = string.Empty;
 
