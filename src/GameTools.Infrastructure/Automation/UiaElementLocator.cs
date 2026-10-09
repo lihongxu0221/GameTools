@@ -71,10 +71,7 @@ public sealed class UiaElementLocator : IUiElementLocator
             return new UiQueryResult
             {
                 Success = false,
-                Message = cancellationToken.IsCancellationRequested
-                    ? "查询已被取消。"
-                    : $"查询超过 {timeoutMs}ms 未完成，已放弃等待。" +
-                      "目标应用可能无响应；若元素树本就稀疏，也可能是窗口尚未获得焦点。"
+                Message = DescribeAbort(cancellationToken, timeoutMs)
             };
         }
 
@@ -84,10 +81,12 @@ public sealed class UiaElementLocator : IUiElementLocator
         }
         catch (OperationCanceledException)
         {
+            // 超时令牌同样会取消内部任务，因此这里不能一律报「已被取消」。
+            // 若不区分，超时查询会给出一条用户从未做过的取消提示。
             return new UiQueryResult
             {
                 Success = false,
-                Message = "查询已被取消。"
+                Message = DescribeAbort(cancellationToken, timeoutMs)
             };
         }
         catch (Exception ex)
@@ -99,6 +98,23 @@ public sealed class UiaElementLocator : IUiElementLocator
             };
         }
     }
+
+    /// <summary>
+    /// 区分「调用方取消」与「查询自身超时」，生成对应的说明。
+    /// </summary>
+    /// <remarks>
+    /// 二者会走到同一个 <see cref="OperationCanceledException"/>：内部任务由
+    /// 「调用方令牌 + 超时令牌」的合并源控制。必须以调用方令牌的实际状态为准，
+    /// 否则超时会伪装成用户取消，提示与事实不符。
+    /// </remarks>
+    /// <param name="cancellationToken">调用方令牌。</param>
+    /// <param name="timeoutMs">本次查询的超时上限。</param>
+    /// <returns>结果说明。</returns>
+    private static string DescribeAbort(CancellationToken cancellationToken, int timeoutMs) =>
+        cancellationToken.IsCancellationRequested
+            ? "查询已被取消。"
+            : $"查询超过 {timeoutMs}ms 未完成，已放弃等待。" +
+              "目标应用可能无响应；若元素树本就稀疏，也可能是窗口尚未获得焦点。";
 
     private static UiQueryResult FindCore(UiQuery query, CancellationToken cancellationToken)
     {

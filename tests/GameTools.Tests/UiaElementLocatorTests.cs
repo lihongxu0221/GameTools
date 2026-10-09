@@ -80,11 +80,13 @@ public class UiaElementLocatorTests
         UiQueryResult result = await locator.FindAsync(
             new UiQuery { RootWindowHandle = form.Handle, TimeoutMs = 1 });
 
-        // 结果取决于 1ms 是否足以完成一次简单查询：无论哪种都不应抛异常
-        Assert.NotNull(result);
+        // 调用方没有取消任何东西，因此失败时必须是超时提示。
+        // 回归背景：超时令牌同样会取消内部任务，此前一律报「已被取消」，
+        // 与事实不符；且该分支与放弃等待分支之间存在竞态，导致本测试偶发失败。
         if (!result.Success)
         {
             Assert.Contains("ms", result.Message);
+            Assert.DoesNotContain("已被取消", result.Message);
         }
     }
 

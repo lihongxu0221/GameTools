@@ -32,7 +32,7 @@ namespace GameTools.Infrastructure.Capture;
 /// 5. 所有 GDI 对象以安全句柄包裹，<c>SelectObject</c> 的原对象在 finally 中还原；
 /// 6. 契约层以 <see cref="CaptureFrame"/> 承载 BGRA 像素，位图仅在本层临时构造并立即释放。
 /// </remarks>
-public sealed class GdiScreenCapture : IScreenCapture
+public sealed class GdiScreenCapture : IScreenCapture, ICaptureSourceProbe
 {
     /// <summary>
     /// 空白判定阈值：采样点亮度低于该值即视为黑。
@@ -44,6 +44,15 @@ public sealed class GdiScreenCapture : IScreenCapture
     /// 空白判定采样步长：每 step 个像素采样一次，兼顾准确性与性能。
     /// </summary>
     private const int BlackSampleStep = 4;
+
+    /// <summary>
+    /// 单色判定时允许的采样点色差上限。
+    /// </summary>
+    /// <remarks>
+    /// 取一个很小的容差而非要求完全相等：缩放与颜色转换会引入极小的数值抖动，
+    /// 要求严格相等会把可用画面误判为单色。
+    /// </remarks>
+    private const int MonochromeTolerance = 2;
 
     private const uint PwClientOnly = 0x00000001u;
     private const uint PwDefault = 0x00000000u;
@@ -199,6 +208,330 @@ public sealed class GdiScreenCapture : IScreenCapture
 
         return result.Frame.ToArray();
     }
+
+    /// <inheritdoc />
+    public CaptureSourceReport Probe(IntPtr windowHandle)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var attempts = new List<CaptureSourceAttempt>();
+
+        if (windowHandle == IntPtr.Zero || !User32.IsWindow(windowHandle))
+        {
+            return new CaptureSourceReport
+            {
+                Message = "窗口句柄无效或窗口已关闭。",
+                Elapsed = stopwatch.Elapsed
+            };
+        }
+
+        foreach (CaptureSourceKind source in BuildProbeSequence())
+        {
+            CaptureResult result = Capture(windowHandle, source);
+            bool usable = result.Success && result.Frame != null;
+
+            attempts.Add(new CaptureSourceAttempt
+            {
+                Source = source,
+                Usable = usable,
+                Message = usable
+                    ? $"可用（{result.Frame!.Width}x{result.Frame.Height}）。"
+                    : result.ErrorMessage ?? "未取得可用画面。"
+            });
+
+            if (usable)
+            {
+                return new CaptureSourceReport
+                {
+                    Source = source,
+                    Attempts = attempts,
+                    Message = $"已探测到可用捕获源：{Describe(source)}。",
+                    Elapsed = stopwatch.Elapsed
+                };
+            }
+        }
+
+        return new CaptureSourceReport
+        {
+            Attempts = attempts,
+            Message = "全部捕获源均不可用。若目标为硬件加速窗口，请确认其未被最小化或完全遮挡后重试。",
+            Elapsed = stopwatch.Elapsed
+        };
+    }
+
+    /// <inheritdoc />
+    public CaptureResult Capture(IntPtr windowHandle, CaptureSourceKind source)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        if (windowHandle == IntPtr.Zero || !User32.IsWindow(windowHandle))
+        {
+            return Failure(
+                CaptureBounds.Empty, CaptureMode.PrintWindow, stopwatch, "窗口句柄无效或窗口已关闭。");
+        }
+
+        if (source == CaptureSourceKind.ScreenBitBlt)
+        {
+            return CaptureScreenRegion(windowHandle, stopwatch);
+        }
+
+        if (!TryGetPrintWindowFlags(source, out uint flags))
+        {
+            return Failure(
+                CaptureBounds.Empty,
+                CaptureMode.PrintWindow,
+                stopwatch,
+                $"未知的捕获源：{source}。");
+        }
+
+        if (flags == PwRenderFullContent && !_osVersion.IsWindows81OrGreater)
+        {
+            return Failure(
+                CaptureBounds.Empty,
+                CaptureMode.PrintWindow,
+                stopwatch,
+                "PW_RENDERFULLCONTENT 自 Windows 8.1 起才受支持，当前系统不可用。");
+        }
+
+        return CaptureWindowWithFlag(windowHandle, flags, stopwatch);
+    }
+
+    /// <summary>
+    /// 按优先级列出应当尝试的捕获源。
+    /// </summary>
+    /// <remarks>
+    /// 顺序即实测得出的可靠度：先尝试能覆盖 DWM 与硬件加速渲染的标志，
+    /// 最后才退到屏幕区域捕获——后者取到的是当前桌面像素，
+    /// 窗口被遮挡时会连遮挡物一起截入。
+    /// </remarks>
+    private IEnumerable<CaptureSourceKind> BuildProbeSequence()
+    {
+        if (_osVersion.IsWindows81OrGreater)
+        {
+            yield return CaptureSourceKind.PrintWindowRenderFullContent;
+        }
+
+        yield return CaptureSourceKind.PrintWindowDefault;
+        yield return CaptureSourceKind.PrintWindowClientOnly;
+        yield return CaptureSourceKind.ScreenBitBlt;
+    }
+
+    /// <summary>
+    /// 把捕获源映射为 <c>PrintWindow</c> 的标志值。
+    /// </summary>
+    /// <param name="source">捕获源。</param>
+    /// <param name="flags">输出标志值。</param>
+    /// <returns>是否支持该捕获源。</returns>
+    private static bool TryGetPrintWindowFlags(CaptureSourceKind source, out uint flags)
+    {
+        switch (source)
+        {
+            case CaptureSourceKind.PrintWindowRenderFullContent:
+                flags = PwRenderFullContent;
+                return true;
+            case CaptureSourceKind.PrintWindowDefault:
+                flags = PwDefault;
+                return true;
+            case CaptureSourceKind.PrintWindowClientOnly:
+                flags = PwClientOnly;
+                return true;
+            default:
+                flags = 0;
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// 以指定标志捕获窗口，供探测与显式来源捕获使用。
+    /// </summary>
+    /// <remarks>
+    /// 与 <see cref="CaptureWindow"/> 的自动降级序列分开：本方法只使用给定标志，
+    /// 失败即返回失败，从而让调用方确切知道画面是否来自预期的那一种方式。
+    /// 两条路径共用相同的可用性判定（未写入像素、全黑、单色）。
+    /// </remarks>
+    private CaptureResult CaptureWindowWithFlag(IntPtr hWnd, uint flags, Stopwatch sw)
+    {
+        if (User32.IsIconic(hWnd))
+        {
+            return Failure(
+                new CaptureBounds(0, 0, 0, 0), CaptureMode.PrintWindow, sw,
+                "窗口已最小化，没有可绘制的客户区。");
+        }
+
+        (int width, int height) = WindowHelper.GetPrintWindowSize(hWnd);
+        if (width <= 0 || height <= 0)
+        {
+            return Failure(
+                CaptureBounds.Empty, CaptureMode.PrintWindow, sw, "窗口尺寸无效。");
+        }
+
+        IntPtr hWindowDc = User32.GetWindowDC(hWnd);
+        if (hWindowDc == IntPtr.Zero)
+        {
+            return Failure(
+                new CaptureBounds(0, 0, width, height), CaptureMode.PrintWindow, sw,
+                $"获取窗口 DC 失败，错误码: {Marshal.GetLastWin32Error()}");
+        }
+
+        using var windowDc = new SafeWindowDcHandle(hWnd, hWindowDc);
+        using var memDc = Gdi32.CreateCompatibleDC(windowDc.DangerousGetHandle());
+
+        if (memDc.IsInvalid)
+        {
+            return Failure(
+                new CaptureBounds(0, 0, width, height), CaptureMode.PrintWindow, sw,
+                $"创建内存 DC 失败，错误码: {Marshal.GetLastWin32Error()}");
+        }
+
+        using var hBitmap = Gdi32.CreateCompatibleBitmap(windowDc.DangerousGetHandle(), width, height);
+        if (hBitmap.IsInvalid)
+        {
+            return Failure(
+                new CaptureBounds(0, 0, width, height), CaptureMode.PrintWindow, sw,
+                $"创建位图句柄失败，错误码: {Marshal.GetLastWin32Error()}");
+        }
+
+        IntPtr hOldBmp = Gdi32.SelectObject(memDc, hBitmap);
+        try
+        {
+            // CreateCompatibleBitmap 不保证清零，先记录初始内容作为基线，
+            // 用于识别「PrintWindow 返回 true 但未写入任何像素」的情形。
+            int[] baseline = SamplePixels(hBitmap.DangerousGetHandle());
+
+            if (!User32.PrintWindow(hWnd, memDc.DangerousGetHandle(), flags))
+            {
+                return Failure(
+                    new CaptureBounds(0, 0, width, height), CaptureMode.PrintWindow, sw,
+                    $"PrintWindow(flags=0x{flags:X}) 返回 false，错误码 {Marshal.GetLastWin32Error()}");
+            }
+
+            if (IsUnchangedFromBaseline(hBitmap.DangerousGetHandle(), baseline))
+            {
+                return Failure(
+                    new CaptureBounds(0, 0, width, height), CaptureMode.PrintWindow, sw,
+                    $"PrintWindow(flags=0x{flags:X}) 返回成功但未绘制任何像素");
+            }
+
+            if (IsAllBlack(hBitmap.DangerousGetHandle()))
+            {
+                return Failure(
+                    new CaptureBounds(0, 0, width, height), CaptureMode.PrintWindow, sw,
+                    $"PrintWindow(flags=0x{flags:X}) 返回成功但内容全黑");
+            }
+
+            if (IsMonochrome(hBitmap.DangerousGetHandle()))
+            {
+                return Failure(
+                    new CaptureBounds(0, 0, width, height), CaptureMode.PrintWindow, sw,
+                    $"PrintWindow(flags=0x{flags:X}) 返回成功但内容为单一颜色，无可用纹理");
+            }
+
+            using Bitmap managed = CreateManagedBitmap(hBitmap.DangerousGetHandle());
+
+            return new CaptureResult
+            {
+                Success = true,
+                Frame = CaptureFrameConverter.ToFrame(managed),
+                Bounds = new CaptureBounds(0, 0, width, height),
+                Mode = CaptureMode.PrintWindow,
+                Elapsed = sw.Elapsed
+            };
+        }
+        finally
+        {
+            // 还原选入的旧对象，避免位图被删除后 DC 引用失效
+            Gdi32.SelectObject(memDc.DangerousGetHandle(), hOldBmp);
+        }
+    }
+
+    /// <summary>
+    /// 通过屏幕区域捕获取得窗口画面。
+    /// </summary>
+    /// <remarks>
+    /// 这是硬件加速窗口唯一可行的方式，但取到的是当前桌面像素：
+    /// 窗口被遮挡时会连遮挡物一起截入，最小化时也没有内容。
+    /// 因此必须先校验可见性与尺寸，并在结果中说明这一局限。
+    /// </remarks>
+    private CaptureResult CaptureScreenRegion(IntPtr hWnd, Stopwatch sw)
+    {
+        if (!User32.IsWindowVisible(hWnd) || User32.IsIconic(hWnd))
+        {
+            return Failure(
+                CaptureBounds.Empty, CaptureMode.DesktopBitBlt, sw,
+                "窗口不可见或已最小化，屏幕区域捕获取不到内容。");
+        }
+
+        // 捕获范围与 PrintWindow 保持一致：都取窗口外框（含不可见缩放边框），
+        // 这样两种来源产生的帧坐标系原点相同，识图命中坐标可以共用同一套换算。
+        CaptureBounds windowBounds = WindowHelper.GetOuterFrameBounds(hWnd);
+        if (windowBounds.IsEmpty)
+        {
+            return Failure(
+                CaptureBounds.Empty, CaptureMode.DesktopBitBlt, sw, "无法取得窗口在屏幕上的位置。");
+        }
+
+        CaptureResult region = CaptureRegionInternal(windowBounds, sw);
+        if (!region.Success)
+        {
+            return Failure(
+                windowBounds, CaptureMode.DesktopBitBlt, sw,
+                region.ErrorMessage ?? "屏幕区域捕获失败。");
+        }
+
+        return new CaptureResult
+        {
+            Success = true,
+            Frame = region.Frame,
+            Bounds = windowBounds,
+            Mode = CaptureMode.DesktopBitBlt,
+            Elapsed = sw.Elapsed,
+            ErrorMessage = "画面取自屏幕像素，窗口被遮挡时截入的将是遮挡内容。"
+        };
+    }
+
+    /// <summary>
+    /// 判断位图内容是否为单一颜色。
+    /// </summary>
+    /// <remarks>
+    /// 比「非全黑」更严格：全黑窗口、纯色背景的空白窗口都会返回 true，
+    /// 这类画面虽非全黑却没有任何纹理，无法用于特征匹配。
+    /// </remarks>
+    private static bool IsMonochrome(IntPtr hBitmap)
+    {
+        int[] samples = SamplePixels(hBitmap);
+        if (samples.Length < 2)
+        {
+            // 采样点不足一个像素时无法判定，交由上层按可用处理
+            return false;
+        }
+
+        int first = samples[0];
+
+        for (int i = 1; i < samples.Length; i++)
+        {
+            int current = samples[i];
+
+            if (Math.Abs((current >> 16 & 0xFF) - (first >> 16 & 0xFF)) > MonochromeTolerance ||
+                Math.Abs((current >> 8 & 0xFF) - (first >> 8 & 0xFF)) > MonochromeTolerance ||
+                Math.Abs((current & 0xFF) - (first & 0xFF)) > MonochromeTolerance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 生成捕获源的中文描述，用于结果说明。
+    /// </summary>
+    private static string Describe(CaptureSourceKind source) => source switch
+    {
+        CaptureSourceKind.PrintWindowRenderFullContent => "PrintWindow + PW_RENDERFULLCONTENT",
+        CaptureSourceKind.PrintWindowDefault => "PrintWindow 默认标志",
+        CaptureSourceKind.PrintWindowClientOnly => "PrintWindow + PW_CLIENTONLY",
+        CaptureSourceKind.ScreenBitBlt => "屏幕区域 BitBlt",
+        _ => "未知来源"
+    };
 
     private static CaptureBounds ToCaptureBounds(Rectangle bounds)
         => new(bounds.X, bounds.Y, bounds.Width, bounds.Height);

@@ -88,6 +88,34 @@ public static class WindowHelper
     }
 
     /// <summary>
+    /// 获取窗口外框在屏幕上的矩形（含不可见缩放边框）。
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 与 <see cref="GetWindowBounds"/> 的区别是本方法使用 <c>GetWindowRect</c>，
+    /// 结果包含 DWM 扩展边界所排除的不可见缩放边框，实测两者每侧相差约 7 像素。
+    /// </para>
+    /// <para>
+    /// <b>捕获帧的坐标系以本方法为准</b>：<c>PrintWindow</c> 按完整外框绘制，
+    /// 位图也按外框尺寸分配，因此帧内原点是外框左上角。用 DWM 边界当原点会
+    /// 产生系统性的坐标偏移。涉及「捕获帧坐标 ↔ 屏幕坐标」换算的场景必须使用本方法。
+    /// </para>
+    /// </remarks>
+    /// <param name="hWnd">目标窗口句柄。</param>
+    /// <returns>窗口外框矩形；句柄无效或调用失败时返回 <see cref="CaptureBounds.Empty"/>。</returns>
+    public static CaptureBounds GetOuterFrameBounds(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero)
+        {
+            return CaptureBounds.Empty;
+        }
+
+        return User32.GetWindowRect(hWnd, out RECT rect) && rect.Width > 0 && rect.Height > 0
+            ? new CaptureBounds(rect.Left, rect.Top, rect.Width, rect.Height)
+            : CaptureBounds.Empty;
+    }
+
+    /// <summary>
     /// 获取指定窗口的详细信息。
     /// </summary>
     /// <param name="hWnd">目标窗口句柄。</param>
