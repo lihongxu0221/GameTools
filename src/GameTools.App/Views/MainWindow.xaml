@@ -87,8 +87,24 @@
                               ToolTip="选择目标窗口。列表较长时可在下拉列表内滚动，或直接用键盘输入标题前缀定位。">
                       <ComboBox.ItemTemplate>
                         <DataTemplate>
-                          <TextBlock Text="{Binding Title}" MaxWidth="520"
-                                     TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" />
+                          <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Title}" MaxWidth="440"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" />
+                            <!-- 最小化窗口无法截图，此处以文字标记而非仅靠颜色区分 -->
+                            <TextBlock Text=" [已最小化]" Margin="6,0,0,0" VerticalAlignment="Center"
+                                       Foreground="{StaticResource DangerBrush}">
+                              <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                  <Setter Property="Visibility" Value="Collapsed" />
+                                  <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMinimized}" Value="True">
+                                      <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                  </Style.Triggers>
+                                </Style>
+                              </TextBlock.Style>
+                            </TextBlock>
+                          </StackPanel>
                         </DataTemplate>
                       </ComboBox.ItemTemplate>
                     </ComboBox>
@@ -215,8 +231,24 @@
                               ToolTip="选择目标窗口。列表较长时可在下拉列表内滚动，或直接用键盘输入标题前缀定位。">
                       <ComboBox.ItemTemplate>
                         <DataTemplate>
-                          <TextBlock Text="{Binding Title}" MaxWidth="520"
-                                     TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" />
+                          <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Title}" MaxWidth="440"
+                                       TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" />
+                            <!-- 最小化窗口无法截图，此处以文字标记而非仅靠颜色区分 -->
+                            <TextBlock Text=" [已最小化]" Margin="6,0,0,0" VerticalAlignment="Center"
+                                       Foreground="{StaticResource DangerBrush}">
+                              <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                  <Setter Property="Visibility" Value="Collapsed" />
+                                  <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMinimized}" Value="True">
+                                      <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                  </Style.Triggers>
+                                </Style>
+                              </TextBlock.Style>
+                            </TextBlock>
+                          </StackPanel>
                         </DataTemplate>
                       </ComboBox.ItemTemplate>
                     </ComboBox>

@@ -73,7 +73,7 @@ GameTools/
 │  ├─ GameTools.Infrastructure/      五大能力实现
 │  └─ GameTools.App/                 WPF 宿主（Prism + NLog）
 ├─ tests/
-│  └─ GameTools.Tests/               自动化测试（92 项）
+│  └─ GameTools.Tests/               自动化测试（96 项）
 └─ Docs/
    ├─ GameTools_使用与运维手册.html    用户手册
    └─ Plans/Features/GameTools/GameToolsCore/   五段式文档（plan/requirements/design/implementation/tasks）
