@@ -45,6 +45,161 @@ public static class User32
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool IsIconic(IntPtr hWnd);
 
+    /// <summary>
+    /// 枚举指定窗口的全部子窗口。
+    /// </summary>
+    /// <remarks>
+    /// 传统 Win32 控件的发现方式。现代应用基本不适用：实测 Chromium 内核窗口
+    /// 仅有 1 个 <c>Intermediate D3D Window</c> 子窗口，WPF 控件则没有独立 HWND。
+    /// </remarks>
+    /// <param name="hWndParent">父窗口句柄。</param>
+    /// <param name="lpEnumFunc">枚举回调。</param>
+    /// <param name="lParam">回调参数。</param>
+    /// <returns>枚举是否成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    /// <summary>
+    /// 判断窗口是否处于可用状态。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <returns>可用时返回 true。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindowEnabled(IntPtr hWnd);
+
+    /// <summary>
+    /// 获取控件在对话框中的标识。
+    /// </summary>
+    /// <param name="hWnd">控件句柄。</param>
+    /// <returns>控件 ID；无 ID 时返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern int GetDlgCtrlID(IntPtr hWnd);
+
+    /// <summary>
+    /// 获取窗口的祖先窗口。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <param name="uFlags">祖先类型，取值见 <see cref="NativeConstants.GA_ROOT"/>。</param>
+    /// <returns>祖先窗口句柄；失败时返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr GetAncestor(IntPtr hWnd, uint uFlags);
+
+    /// <summary>
+    /// 获取窗口的父窗口或拥有者窗口。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <returns>父窗口句柄；无父窗口时返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr GetParent(IntPtr hWnd);
+
+    /// <summary>
+    /// 命中测试：返回指定点上最深的子窗口。
+    /// </summary>
+    /// <remarks>
+    /// 特征识图定位的落点由此解析为句柄。传入坐标为父窗口客户区坐标。
+    /// </remarks>
+    /// <param name="hWndParent">父窗口句柄。</param>
+    /// <param name="pt">客户区坐标。</param>
+    /// <param name="uFlags">跳过规则，见 <c>CWP_*</c> 常量。</param>
+    /// <returns>命中的子窗口句柄；未命中返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr ChildWindowFromPointEx(IntPtr hWndParent, POINT pt, uint uFlags);
+
+    /// <summary>
+    /// 返回指定屏幕坐标处的窗口句柄。
+    /// </summary>
+    /// <param name="point">屏幕坐标。</param>
+    /// <returns>命中的窗口句柄。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr WindowFromPoint(POINT point);
+
+    // 鼠标状态 APIs
+
+    /// <summary>
+    /// 读取当前鼠标光标在屏幕上的位置。
+    /// </summary>
+    /// <remarks>
+    /// 用于校验后台操作是否真的没有影响实体鼠标：消息投递路径不应改变该值。
+    /// </remarks>
+    /// <param name="point">输出光标位置。</param>
+    /// <returns>是否读取成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetCursorPos(out POINT point);
+
+    /// <summary>
+    /// 移动鼠标光标到指定屏幕位置。
+    /// </summary>
+    /// <remarks>
+    /// 会真实改变实体鼠标的位置，进而影响用户正在操作的窗口。
+    /// 仅在明确需要光标实际就位的场景使用，且必须成对还原。
+    /// </remarks>
+    /// <param name="x">目标屏幕横坐标。</param>
+    /// <param name="y">目标屏幕纵坐标。</param>
+    /// <returns>是否移动成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetCursorPos(int x, int y);
+
+    /// <summary>
+    /// 返回当前捕获鼠标消息的窗口句柄。
+    /// </summary>
+    /// <remarks>
+    /// 目标程序收到鼠标按下消息后可能调用 <c>SetCapture</c> 把自己设为捕获者。
+    /// 若不处理，实体鼠标会被困在该窗口：光标移出后点击仍被其接收。
+    /// </remarks>
+    /// <returns>捕获窗口句柄；无捕获时返回 <see cref="IntPtr.Zero"/>。</returns>
+    [DllImport(LibraryName)]
+    public static extern IntPtr GetCapture();
+
+    /// <summary>
+    /// 释放当前线程的鼠标捕获。
+    /// </summary>
+    /// <remarks>
+    /// 只有捕获该鼠标的线程才能释放。仅当目标程序因我们的点击而取得捕获时调用。
+    /// </remarks>
+    /// <returns>是否释放成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ReleaseCapture();
+
+    /// <summary>
+    /// 在两个窗口坐标系之间转换点。
+    /// </summary>
+    /// <remarks>
+    /// 特征识图命中点位位于捕获帧坐标系，需经此转换为目标窗口客户区坐标，
+    /// 才能交给 <see cref="ChildWindowFromPointEx"/> 做命中测试。
+    /// </remarks>
+    /// <param name="hWndFrom">源窗口句柄；为 0 表示屏幕坐标。</param>
+    /// <param name="hWndTo">目标窗口句柄；为 0 表示屏幕坐标。</param>
+    /// <param name="lpPoint">待转换的坐标点。</param>
+    /// <param name="cPoints">坐标点数量。</param>
+    /// <returns>成功转换的坐标点数量。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern int MapWindowPoints(IntPtr hWndFrom, IntPtr hWndTo, ref POINT lpPoint, uint cPoints);
+
+    /// <summary>
+    /// 将窗口客户区坐标转换为屏幕坐标。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <param name="lpPoint">待转换的坐标点。</param>
+    /// <returns>转换是否成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+
+    /// <summary>
+    /// 将屏幕坐标转换为窗口客户区坐标。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <param name="lpPoint">待转换的坐标点。</param>
+    /// <returns>转换是否成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+
     [DllImport(LibraryName, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);

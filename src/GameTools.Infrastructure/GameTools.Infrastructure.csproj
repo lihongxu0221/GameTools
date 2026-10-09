@@ -10,4 +10,35 @@
     <ProjectReference Include="..\GameTools.Win32\GameTools.Win32.csproj" />
   </ItemGroup>
 
+  <!--
+    UI Automation 客户端程序集。
+
+    仅引用客户端（AutomationElement、TreeWalker、ValuePattern 等），
+    不引用 UIAutomationProvider（服务端实现），因此本库仍是纯客户端。
+
+    两个目标的解析方式不同：
+    - net8.0-windows：UseWindowsForms 只引入 Microsoft.WindowsDesktop.App.WindowsForms
+      这一 flavor，默认编译引用不含 UI Automation 程序集；需要补完整的
+      Microsoft.WindowsDesktop.App 框架引用（程序集内置于 .NET 桌面目标包）。
+    - net48：从 v4.8 参考程序集与 GAC 直接引用。
+
+    两者均无需 NuGet 包，也无需 COM 引用，不抬高 VS 2022 17.8 / SDK 8.0.100 的工具链下限。
+  -->
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net8.0-windows' ">
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+  </ItemGroup>
+
+  <!--
+    说明：UI Automation 的 BoundingRectangleProperty 返回 System.Windows.Rect，
+    该类型位于 WindowsBase。直接访问会迫使本 WinForms 工程引用 WPF 基础程序集，
+    并在 net8.0-windows 与 net48 之间产生 MSB3243 引用解析冲突。
+    UiaElementLocator 因此改用 GetCurrentPropertyValue 取回 object，
+    再从其运行时类型上按属性读取坐标，故本工程无需引用 WindowsBase。
+  -->
+
 </Project>

@@ -97,6 +97,27 @@ public static class NativeConstants
     public const int SW_SHOWNOACTIVATE = 4;
     public const int SW_RESTORE = 9;
 
+    // 控件消息：传统 Win32 控件的文本写入与按钮点击
+    // 备注：现代应用（Grok Bot、DeepSeek、Chrome 等 Chromium 内核，WPF/WinUI）
+    // 不暴露这些控件，实测 Grok Bot 仅 1 个子窗口且无 Edit/Button，
+    // 因此以下消息仅作为遗留 MFC/WinForms/Dialog 程序的兜底路径。
+    public const uint BM_CLICK = 0x00F5;
+    public const uint BM_GETSTATE = 0x00F2;
+    public const uint EM_SETSEL = 0x00B1;
+    public const uint EM_REPLACESEL = 0x00C2;
+
+    // 窗口遍历与命中测试
+    public const uint GA_ROOT = 2;
+    public const uint CWP_SKIPINVISIBLE = 0x00000001;
+    public const uint CWP_SKIPTRANSPARENT = 0x00000004;
+    public const uint CWP_ALL = 0x000000FF;
+
+    // 常用控件类名：传统控件枚举时的匹配目标
+    public const string ClassEdit = "Edit";
+    public const string ClassRichEdit = "RICHEDIT50W";
+    public const string ClassRichEditClass = "RichEdit20W";
+    public const string ClassButton = "Button";
+
     // Virtual-Key Codes used by background message injection
     public const uint VK_RETURN = 0x0D;
     public const uint VK_TAB = 0x09;

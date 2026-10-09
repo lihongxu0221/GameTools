@@ -45,6 +45,18 @@
 
 **契约层平台无关化**：契约不得出现 `System.Windows.Forms.Keys`、`System.Drawing.Bitmap`、`System.Drawing.Rectangle` 等框架类型。WinForms 与 GDI+ 依赖收口到 `Infrastructure` 与 `App`，转换器位于边界处。
 
+**目标框架矩阵**：
+
+| 工程 | 目标框架 | 说明 |
+| --- | --- | --- |
+| `GameTools.Core` | `netstandard2.0` | 纯契约与值对象，不参与多目标构建 |
+| `GameTools.Win32` | `net8.0-windows`;`net48` | Win32 P/Invoke 与原生结构 |
+| `GameTools.Infrastructure` | `net8.0-windows`;`net48` | 平台能力实现，含 UI Automation 与 GDI+ |
+| `GameTools.App` | `net8.0-windows`;`net48` | WPF 应用宿主 |
+| `GameTools.Tests` | `net8.0-windows`;`net48` | 自动化测试 |
+
+除 `Core` 为 `netstandard2.0` 外，其余四个工程均为多目标 `net8.0-windows;net48`：前者面向 Windows 10 及以上，后者面向 Windows 7 SP1 / 8 / 8.1。`Core` 刻意不参与多目标，以保证契约层不被任一 UI 框架或 .NET 版本绑定。
+
 ## 2. 核心模块详细设计
 
 ### 2.1 后台消息泵 (BackgroundMessagePump)
