@@ -49,13 +49,16 @@ public partial class App : PrismApplication
     /// <inheritdoc />
     protected override void OnStartup(StartupEventArgs e)
     {
-        // 日志必须先于一切初始化，否则启动期异常无处可查
-        _logger = AppLogFactory.Initialize();
+        // 参数解析必须先于日志初始化：是否挂载内存目标取决于宿主模式
+        Options = HostOptions.Parse(e.Args);
+
+        // 日志必须先于一切初始化，否则启动期异常无处可查。
+        // 交互式宿主挂载内存目标，使「运行日志」面板与文件日志来自同一管道。
+        _logger = AppLogFactory.Initialize(
+            attachMemoryTarget: Options.Mode != HostMode.Headless);
 
         // 桥接库层 Trace 输出到统一日志文件
         Trace.Listeners.Add(TraceLog.Instance);
-
-        Options = HostOptions.Parse(e.Args);
 
         _logger.Info("GameTools 启动，宿主模式: {Mode}", Options.Mode);
         _logger.Info("系统信息: {OsInfo}", OSVersionHelper.GetOsDescription());
@@ -103,6 +106,10 @@ public partial class App : PrismApplication
         }
 
         viewModel.ShutdownRequested += (_, _) => Shutdown();
+
+        // 把统一日志管道接入界面「运行日志」面板。
+        // 订阅失败（例如未挂载内存目标）时不阻断启动，面板将仅显示操作结果。
+        AppLogFactory.TrySubscribe(viewModel.AppendLog);
 
         if (Options.Mode == HostMode.Tray)
         {

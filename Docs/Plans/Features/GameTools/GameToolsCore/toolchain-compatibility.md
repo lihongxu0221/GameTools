@@ -8,6 +8,18 @@
 | NuGet | 6.2+ | 中央包管理（`Directory.Packages.props`）要求 VS 2022 17.2 / NuGet 6.2 起 |
 | .NET Framework | 4.8（Developer Pack） | `net48` 目标所需；仓库已确认本机存在 v4.8 targeting pack |
 
+## 各工程目标框架
+
+| 工程 | 目标框架 | 与工具链的关系 |
+| --- | --- | --- |
+| `GameTools.Core` | `netstandard2.0` | **不参与多目标构建**。契约与值对象层刻意只面向单一框架，避免被任一 UI 框架或 .NET 版本绑定 |
+| `GameTools.Win32` | `net8.0-windows`;`net48` | 需要 `net8.0-windows` 与 v4.8 targeting pack |
+| `GameTools.Infrastructure` | `net8.0-windows`;`net48` | 同上；`net8.0-windows` 侧额外需要 .NET 桌面目标包内置的 UI Automation 程序集 |
+| `GameTools.App` | `net8.0-windows`;`net48` | 同上 |
+| `GameTools.Tests` | `net8.0-windows`;`net48` | 同上 |
+
+`net48` 面向 Windows 7 SP1 / 8 / 8.1，`net8.0-windows` 面向 Windows 10 及以上。配置环境时若参照本表误以为 `Core` 也是双目标，会得到错误的还原与裁剪预期。
+
 ## 约束来源
 
 - `.slnx` 解决方案格式仅 VS 2022 17.13+ / SDK 9.0.200+ 原生支持，17.12 需手动开启预览特性。为兼容老版本，统一使用经典 `.sln`。

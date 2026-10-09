@@ -45,6 +45,111 @@ public static class User32
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool IsIconic(IntPtr hWnd);
 
+    /// <summary>
+    /// 枚举指定窗口的全部子窗口。
+    /// </summary>
+    /// <remarks>
+    /// 传统 Win32 控件的发现方式。现代应用基本不适用：实测 Chromium 内核窗口
+    /// 仅有 1 个 <c>Intermediate D3D Window</c> 子窗口，WPF 控件则没有独立 HWND。
+    /// </remarks>
+    /// <param name="hWndParent">父窗口句柄。</param>
+    /// <param name="lpEnumFunc">枚举回调。</param>
+    /// <param name="lParam">回调参数。</param>
+    /// <returns>枚举是否成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    /// <summary>
+    /// 判断窗口是否处于可用状态。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <returns>可用时返回 true。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindowEnabled(IntPtr hWnd);
+
+    /// <summary>
+    /// 获取控件在对话框中的标识。
+    /// </summary>
+    /// <param name="hWnd">控件句柄。</param>
+    /// <returns>控件 ID；无 ID 时返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern int GetDlgCtrlID(IntPtr hWnd);
+
+    /// <summary>
+    /// 获取窗口的祖先窗口。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <param name="uFlags">祖先类型，取值见 <see cref="NativeConstants.GA_ROOT"/>。</param>
+    /// <returns>祖先窗口句柄；失败时返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr GetAncestor(IntPtr hWnd, uint uFlags);
+
+    /// <summary>
+    /// 获取窗口的父窗口或拥有者窗口。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <returns>父窗口句柄；无父窗口时返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr GetParent(IntPtr hWnd);
+
+    /// <summary>
+    /// 命中测试：返回指定点上最深的子窗口。
+    /// </summary>
+    /// <remarks>
+    /// 特征识图定位的落点由此解析为句柄。传入坐标为父窗口客户区坐标。
+    /// </remarks>
+    /// <param name="hWndParent">父窗口句柄。</param>
+    /// <param name="pt">客户区坐标。</param>
+    /// <param name="uFlags">跳过规则，见 <c>CWP_*</c> 常量。</param>
+    /// <returns>命中的子窗口句柄；未命中返回 0。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr ChildWindowFromPointEx(IntPtr hWndParent, POINT pt, uint uFlags);
+
+    /// <summary>
+    /// 返回指定屏幕坐标处的窗口句柄。
+    /// </summary>
+    /// <param name="point">屏幕坐标。</param>
+    /// <returns>命中的窗口句柄。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern IntPtr WindowFromPoint(POINT point);
+
+    /// <summary>
+    /// 在两个窗口坐标系之间转换点。
+    /// </summary>
+    /// <remarks>
+    /// 特征识图命中点位位于捕获帧坐标系，需经此转换为目标窗口客户区坐标，
+    /// 才能交给 <see cref="ChildWindowFromPointEx"/> 做命中测试。
+    /// </remarks>
+    /// <param name="hWndFrom">源窗口句柄；为 0 表示屏幕坐标。</param>
+    /// <param name="hWndTo">目标窗口句柄；为 0 表示屏幕坐标。</param>
+    /// <param name="lpPoint">待转换的坐标点。</param>
+    /// <param name="cPoints">坐标点数量。</param>
+    /// <returns>成功转换的坐标点数量。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    public static extern int MapWindowPoints(IntPtr hWndFrom, IntPtr hWndTo, ref POINT lpPoint, uint cPoints);
+
+    /// <summary>
+    /// 将窗口客户区坐标转换为屏幕坐标。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <param name="lpPoint">待转换的坐标点。</param>
+    /// <returns>转换是否成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+
+    /// <summary>
+    /// 将屏幕坐标转换为窗口客户区坐标。
+    /// </summary>
+    /// <param name="hWnd">窗口句柄。</param>
+    /// <param name="lpPoint">待转换的坐标点。</param>
+    /// <returns>转换是否成功。</returns>
+    [DllImport(LibraryName, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+
     [DllImport(LibraryName, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
